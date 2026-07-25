@@ -262,10 +262,10 @@ input,select,textarea{font:inherit; color:var(--ink)}
 .field.wide{grid-column:1 / -1}
 .field input[type=text], .field input[type=date], .field input[type=number], .field textarea{
   border:1px solid var(--card-edge); background:var(--bg); border-radius:8px;
-  padding:10px 12px; font-size:15px; width:100%; min-height:44px;
+  padding:10px 12px; font-size:16px; width:100%; min-height:44px;
 }
 .field textarea{min-height:96px; resize:vertical;
-  font-family:ui-monospace, Menlo, monospace; font-size:12px}
+  font-family:ui-monospace, Menlo, monospace; font-size:16px}
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   border-radius:10px; padding:12px 16px; font-weight:700; font-size:15px;
@@ -452,7 +452,7 @@ function fmtDay(k){ return dayFmt.format(new Date(keyToUTC(k))); }
 function parseCents(str){
   if (typeof str !== 'string') return null;
   var s = str.trim().replace(/^\$/,'').replace(/,/g,'');
-  if (!/^\d{1,7}(\.\d{1,2})?$/.test(s)) return null;
+  if (!/^(\d{1,7}(\.\d{1,2})?|\.\d{1,2})$/.test(s)) return null;
   var cents = Math.round(parseFloat(s) * 100);
   if (!isFinite(cents) || cents < 0 || cents > 100000000) return null;
   return cents;
@@ -520,8 +520,8 @@ var ui = {                 // never persisted
   readOnly: false,
   corruptRaw: null,
   bannerDismissed: {},
-  undo: null,
-  undoTimer: null,
+  returnFocus: null,
+  lastRenderedDay: null,
   importPreview: null,
   sheet: null              // {mode:'add'|'edit'|'qa-edit'|'qa-add', ...}
 };
@@ -567,6 +567,10 @@ function save(){
   return ok;
 }
 function commit(fn){
+  if (ui.readOnly){
+    toast('Read-only mode — nothing changed. Export a backup, then reload.');
+    return;
+  }
   fn(state);
   save();
   render();
@@ -793,8 +797,8 @@ function paceSVG(s, exps, k){
     svg += '<line x1="' + L + '" y1="' + Y(c) + '" x2="' + (W - Rp) + '" y2="' + Y(c) + '" stroke="var(--card-edge)" stroke-width="1"/>';
     svg += '<text x="' + (L - 5) + '" y="' + (Y(c) + 4) + '" text-anchor="end" font-size="10" fill="var(--ink-3)">' + fmtWhole(c) + '</text>';
   });
-  svg += '<text x="' + L + '" y="' + (H - 6) + '" font-size="10" fill="var(--ink-3)">Jul 27</text>';
-  svg += '<text x="' + (W - Rp) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" fill="var(--ink-3)">' + fmtDay(s.tripEnd).replace(/^\w+ /, '') + '</text>';
+  svg += '<text x="' + L + '" y="' + (H - 6) + '" font-size="10" fill="var(--ink-3)">' + fmtDay(s.tripStart).replace(/^\w+,\s*/, '') + '</text>';
+  svg += '<text x="' + (W - Rp) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" fill="var(--ink-3)">' + fmtDay(s.tripEnd).replace(/^\w+,\s*/, '') + '</text>';
   // allowance line (muted, dashed)
   svg += '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(days) + '" y2="' + Y(s.totalBudgetCents) + '" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="5 4"/>';
   // actual cumulative spend line
@@ -919,7 +923,7 @@ function viewCountdown(){
     '<div class="funstat"><span class="k">Customize quick-add buttons</span><span class="v">in Settings</span></div>' +
     '<div class="funstat"><span class="k">Add this page to your home screen</span><span class="v">Share → Add</span></div>' +
     '<div class="funstat"><span class="k">Practice saying “I’m walking here”</span><span class="v">ongoing</span></div>' +
-    '<div class="center-empty">Any spending you log before the 27th counts toward Day 1. The rat allows pre-gaming.</div>' +
+    '<div class="center-empty">Any spending you log before ' + fmtDay(s.tripStart) + ' counts toward Day 1. The rat allows pre-gaming.</div>' +
   '</section>';
 }
 
@@ -1054,6 +1058,7 @@ function viewSettings(){
     '<div class="field wide" style="margin-top:14px"><span class="label">Restore: paste a backup here</span>' +
       '<textarea id="import-text" data-testid="import-text" placeholder=\'{"schemaVersion":1,...}\'></textarea></div>' +
     '<button class="btn" data-action="import-check" data-testid="import-check">Check it</button>' +
+    '<button class="btn" data-action="restore-bak" data-testid="restore-bak">Restore last automatic backup</button>' +
     '<div id="import-zone">' + (ui.importPreview ? importPreviewHTML() : '') + '</div>' +
   '</section>';
 
@@ -1151,6 +1156,7 @@ function viewTabbar(){
 
 /* ---- top-level render ---- */
 function render(){
+  ui.lastRenderedDay = realTodayKey();
   document.getElementById('sign').innerHTML = viewSign();
   document.getElementById('banner-zone').innerHTML = viewBanners();
   var screen = document.getElementById('screen');
@@ -1162,9 +1168,12 @@ function render(){
   // the sheet intentionally does NOT re-render here (keyboard focus safety)
 }
 function renderSheet(){
-  document.getElementById('sheet-zone').innerHTML = viewSheet();
+  var zone = document.getElementById('sheet-zone');
+  if (!zone.querySelector('.panel')) ui.returnFocus = document.activeElement;  // only on first open
+  zone.innerHTML = viewSheet();
+  document.body.style.overflow = 'hidden';
   var amt = document.getElementById('f-amount');
-  if (amt && ui.sheet && ui.sheet.mode === 'add' && ui.sheet.amountCents == null) amt.focus();
+  if (amt) amt.focus();
 }
 
 /* ---- toast ---- */
@@ -1205,9 +1214,16 @@ function openAddSheet(prefill){
   }, prefill || {});
   renderSheet();
 }
-function closeSheet(){ ui.sheet = null; document.getElementById('sheet-zone').innerHTML = ''; }
+function closeSheet(){
+  ui.sheet = null;
+  document.getElementById('sheet-zone').innerHTML = '';
+  document.body.style.overflow = '';
+  if (ui.returnFocus && ui.returnFocus.isConnected) ui.returnFocus.focus();
+  ui.returnFocus = null;
+}
 
 function saveExpenseFromSheet(){
+  if (ui.readOnly){ closeSheet(); toast('Read-only mode — nothing changed.'); return; }
   var sh = ui.sheet;
   readSheetForm();
   var cents = sh.amountCents;
@@ -1282,11 +1298,12 @@ var actions = {
     var e = state.expenses.find(function(x){ return x.id === id; });
     closeSheet();
     if (!e) return;
+    if (ui.readOnly){ toast('Read-only mode — deleting is off. Export a backup, then reload.'); return; }
     commit(function(st){ st.expenses = st.expenses.filter(function(x){ return x.id !== id; }); });
-    ui.undo = e;
+    // each toast captures ITS deleted expense — stacked deletes each undo correctly
     toast(LINES.deleted, 'Undo', function(){
-      var back = ui.undo; ui.undo = null;
-      if (back) commit(function(st){ st.expenses.push(back); });
+      if (state.expenses.some(function(x){ return x.id === e.id; })) return;
+      commit(function(st){ st.expenses.push(e); });
       toast(LINES.restored);
     });
   },
@@ -1312,6 +1329,7 @@ var actions = {
   'qa-delete': function(){
     var id = ui.sheet.id;
     closeSheet();
+    if (ui.readOnly){ toast('Read-only mode — nothing changed.'); return; }
     commit(function(st){ st.quickAdds = st.quickAdds.filter(function(x){ return x.id !== id; }); });
     toast('Button removed. It served honorably.');
   },
@@ -1321,7 +1339,25 @@ var actions = {
   'export-csv': function(){ exportCSV(); },
   'import-check': function(){ checkImport(); },
   'import-confirm': function(){ confirmImport(); },
+  'restore-bak': function(){
+    var raw = storageGet(KEY + '.bak');
+    if (!raw){ toast('No automatic backup exists yet. Nothing risky has happened. Boring, honestly.'); return; }
+    var res = validateImport(raw);
+    if (res.error){
+      ui.importPreview = { error: 'The automatic backup is unreadable: ' + res.error };
+    } else {
+      var c = res.clean;
+      ui.importPreview = {
+        clean: c,
+        days: diffDays(c.settings.tripStart, c.settings.tripEnd) + 1,
+        count: c.expenses.length,
+        spent: sumCents(c.expenses.filter(function(e){ return !e.diningDollars; }))
+      };
+    }
+    render();
+  },
   'reset-all': function(){
+    if (ui.readOnly){ toast('Read-only mode — the reset button is decorative today.'); return; }
     if (!ui.confirmReset){
       ui.confirmReset = true; render();
       setTimeout(function(){ ui.confirmReset = false; try{ render(); }catch(e){} }, 4000);
@@ -1336,6 +1372,7 @@ var actions = {
 };
 
 function saveQuickAddFromSheet(){
+  if (ui.readOnly){ closeSheet(); toast('Read-only mode — nothing changed.'); return; }
   var sh = ui.sheet;
   readSheetForm();
   var cents = sh.amountCents;
@@ -1361,6 +1398,39 @@ document.addEventListener('click', function(ev){
   if (!el) return;
   var fn = actions[el.dataset.action];
   if (fn) fn(el);
+});
+/* sheet keyboard support: Escape closes, Tab stays inside the dialog */
+document.addEventListener('keydown', function(ev){
+  if (!ui.sheet) return;
+  if (ev.key === 'Escape'){ ev.preventDefault(); closeSheet(); return; }
+  if (ev.key !== 'Tab') return;
+  var panel = document.querySelector('#sheet-zone .panel');
+  if (!panel) return;
+  var f = panel.querySelectorAll('button, input, textarea, select');
+  if (!f.length) return;
+  var first = f[0], last = f[f.length - 1];
+  if (!panel.contains(document.activeElement)){ ev.preventDefault(); first.focus(); }
+  else if (ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); }
+  else if (!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); }
+});
+/* keep "today" honest: re-render when the NY day flips or the tab wakes up */
+function dayTick(){
+  if (ui.sheet || ui.debugNow) return;
+  if (realTodayKey() !== ui.lastRenderedDay) render();
+}
+setInterval(dayTick, 60000);
+document.addEventListener('visibilitychange', function(){ if (!document.hidden) dayTick(); });
+/* another tab saved: adopt its state so tabs converge instead of clobbering */
+window.addEventListener('storage', function(ev){
+  if (ev.key !== KEY || !ev.newValue || ui.readOnly) return;
+  try {
+    var p = JSON.parse(ev.newValue);
+    if (p && p.settings && Array.isArray(p.expenses) &&
+        typeof p.schemaVersion === 'number' && p.schemaVersion <= SCHEMA){
+      state = p;
+      if (!ui.sheet) render();
+    }
+  } catch(e){ /* ignore malformed cross-tab writes */ }
 });
 /* pace chart touch/pointer inspection */
 document.addEventListener('pointermove', paceInspect);
@@ -1455,12 +1525,17 @@ function validateImport(raw){
       totalBudgetCents: s.totalBudgetCents, diningDollarsStartCents: s.diningDollarsStartCents,
       name: typeof s.name === 'string' && s.name.trim() ? s.name.trim().slice(0,20) : 'Via'
     },
-    expenses: v.expenses.map(function(e){
-      return { id: typeof e.id === 'string' ? e.id : uid(), amountCents: e.amountCents,
-        category: e.category, note: String(e.note || '').slice(0,200), date: e.date,
-        diningDollars: !!e.diningDollars,
-        createdAt: Number.isFinite(e.createdAt) ? e.createdAt : Date.now() };
-    }),
+    expenses: (function(){
+      var seen = {};
+      return v.expenses.map(function(e){
+        var id = (typeof e.id === 'string' && e.id && e.id.length <= 64 && !seen[e.id]) ? e.id : uid();
+        seen[id] = true;
+        return { id: id, amountCents: e.amountCents,
+          category: e.category, note: String(e.note || '').slice(0,200), date: e.date,
+          diningDollars: !!e.diningDollars,
+          createdAt: Number.isFinite(e.createdAt) ? e.createdAt : Date.now() };
+      });
+    })(),
     quickAdds: Array.isArray(v.quickAdds) ? v.quickAdds.filter(function(q){
       return q && Number.isInteger(q.amountCents) && q.amountCents > 0 && CATS[q.category] &&
         typeof q.label === 'string' && q.label.trim();

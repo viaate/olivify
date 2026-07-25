@@ -252,12 +252,18 @@ test('13. storage broken → warning banner + fully usable in-memory', async () 
   await close(p);
 });
 
-test('14. data written by a newer app version → read-only, not wiped', async () => {
-  const newer = { ...baseState(), schemaVersion: 99 };
+test('14. newer-schema data → read-only; destructive actions are inert', async () => {
+  const newer = { ...baseState({ expenses: [exp('e_a', '2026-07-27', 1000, 'eats', 'Bagel')] }), schemaVersion: 99 };
   const p = await page({ seed: newer, now: '2026-07-28' });
   assert.ok(await p.locator('[data-testid=readonly-banner]').isVisible());
+  await p.click('[data-testid=tab-history]');
+  await p.click('[data-testid=expense-row]');
+  await p.click('[data-testid=delete-expense]');
+  const st = await p.evaluate(() => window.__test.getState());
+  assert.equal(st.expenses.length, 1, 'delete did not mutate in-memory state');
   const stored = await p.evaluate(k => JSON.parse(localStorage.getItem(k)), KEY);
   assert.equal(stored.schemaVersion, 99, 'newer data untouched');
+  assert.equal(stored.expenses.length, 1);
   await close(p);
 });
 
@@ -272,6 +278,62 @@ test('15. both themes render distinct, legible surfaces', async () => {
     assert.doesNotMatch(await ink(pg), /rgba?\(0, 0, 0, 0\)/, 'headline ink is not transparent');
   }
   await close(light); await close(dark);
+});
+
+test('16. two quick deletes: each Undo restores its own expense', async () => {
+  const p = await page({ seed: SEED4, now: '2026-07-30' });
+  await p.click('[data-testid=tab-history]');
+  await p.click('[data-testid=expense-row]:has-text("Big bagel energy")');
+  await p.click('[data-testid=delete-expense]');
+  await p.click('[data-testid=expense-row]:has-text("Comedy cellar")');
+  await p.click('[data-testid=delete-expense]');
+  assert.equal(await p.locator('#toast-zone button').count(), 2, 'two stacked undo toasts');
+  await p.locator('#toast-zone button').first().click();          // undo the FIRST delete
+  let st = await p.evaluate(() => window.__test.getState());
+  assert.ok(st.expenses.some(e => e.note === 'Big bagel energy'), 'first undo restored the bagel');
+  await p.locator('#toast-zone button').first().click();          // remaining undo
+  st = await p.evaluate(() => window.__test.getState());
+  assert.equal(st.expenses.length, 2, 'both expenses restored');
+  assert.ok(st.expenses.some(e => e.note === 'Comedy cellar'));
+  await close(p);
+});
+
+test('17. a second tab adopts saves from the first (no clobber)', async () => {
+  const p = await page({ seed: baseState(), now: '2026-07-28' });
+  const p2 = await p.context().newPage();
+  await p2.goto(origin);
+  await p2.evaluate(k => window.__test.setNow(k), '2026-07-28');
+  await p.click('[data-testid=fab]');
+  await p.fill('[data-testid=amount-input]', '7');
+  await p.click('[data-testid=save-expense]');
+  await p2.waitForTimeout(400);
+  await p2.evaluate(k => window.__test.setNow(k), '2026-07-28'); // re-render p2
+  assert.equal(await text(p2, '[data-testid=headline-amount]'), fmt$(cumAllow(S, 2) - 700));
+  await close(p);
+});
+
+test('18. reset writes a .bak that "Restore last automatic backup" recovers', async () => {
+  const p = await page({ seed: SEED4, now: '2026-07-30' });
+  await p.click('[data-testid=tab-settings]');
+  await p.click('[data-testid=reset-all]');
+  await p.click('[data-testid=reset-all]');                       // confirm tap
+  let st = await p.evaluate(() => window.__test.getState());
+  assert.equal(st.expenses.length, 0, 'reset cleared expenses');
+  await p.click('[data-testid=restore-bak]');
+  assert.match(await text(p, '[data-testid=import-preview]'), /2 expenses/);
+  await p.click('[data-testid=import-confirm]');
+  st = await p.evaluate(() => window.__test.getState());
+  assert.equal(st.expenses.length, 2, 'backup restored both expenses');
+  await close(p);
+});
+
+test('19. sub-dollar amounts typed as ".75" are valid money', async () => {
+  const p = await page({ seed: baseState(), now: '2026-07-28' });
+  await p.click('[data-testid=fab]');
+  await p.fill('[data-testid=amount-input]', '.75');
+  await p.click('[data-testid=save-expense]');
+  assert.equal(await text(p, '[data-testid=headline-amount]'), fmt$(cumAllow(S, 2) - 75));
+  await close(p);
 });
 
 (async () => {
