@@ -12,12 +12,12 @@ function diffDays(a, b) { return Math.round((keyToUTC(b) - keyToUTC(a)) / DAY_MS
 
 function baseState(overrides = {}) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     settings: {
       tripStart: '2026-07-27',
       tripEnd: '2026-08-09',
       totalBudgetCents: 180000,
-      diningDollarsStartCents: 3000,
+      ddPerWeekCents: 3000,
       name: 'Via',
       ...(overrides.settings || {}),
     },

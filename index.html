@@ -472,7 +472,16 @@ function fmtWhole(cents){
    §C STORE — one key, versioned, republish-proof
    ========================================================= */
 var KEY = 'vianancial.v1';
-var SCHEMA = 1;
+var SCHEMA = 2;
+var MIGRATIONS = [
+  // v1 → v2: dining dollars became a weekly use-it-or-lose-it allotment
+  function(st){
+    st.settings.ddPerWeekCents = 3000;
+    delete st.settings.diningDollarsStartCents;
+    st.schemaVersion = 2;
+    return st;
+  }
+];
 var CATS = {
   eats:  { label:'Eats',  full:'Food & drinks',   letter:'E' },
   fun:   { label:'Fun',   full:'Fun & going out', letter:'F' },
@@ -503,7 +512,7 @@ function seedState(){
       tripStart: '2026-07-27',
       tripEnd:   '2026-08-09',
       totalBudgetCents: 180000,
-      diningDollarsStartCents: 3000,
+      ddPerWeekCents: 3000,
       name: 'Via'
     },
     expenses: [],
@@ -553,9 +562,14 @@ function load(){
   }
   if (parsed.schemaVersion < SCHEMA){
     storageSet(KEY + '.bak', raw);
-    // ordered pure migrations go here as schema grows; v1 has none
+    while (parsed.schemaVersion < SCHEMA){
+      parsed = MIGRATIONS[parsed.schemaVersion - 1](parsed);
+    }
+    state = parsed;
+    save();
+  } else {
+    state = parsed;
   }
-  state = parsed;
   if (!Array.isArray(state.quickAdds)) state.quickAdds = defaultQuickAdds();
 }
 function save(){
@@ -610,7 +624,13 @@ function daySpent(exps, k){
   return sumCents(realSpend(exps).filter(function(e){ return e.date === k; }));
 }
 function ddSpent(exps){ return sumCents(exps.filter(function(e){ return e.diningDollars; })); }
-function ddRemaining(s, exps){ return s.diningDollarsStartCents - ddSpent(exps); }
+/* dining dollars reset weekly: week 0 = trip days 1-7, week 1 = days 8-14, ... */
+function weekIndex(s, k){ return Math.floor((dayNum(s, k) - 1) / 7); }
+function ddRemainingForWeek(s, exps, w, excludeId){
+  return s.ddPerWeekCents - sumCents(exps.filter(function(e){
+    return e.diningDollars && weekIndex(s, e.date) === w && e.id !== excludeId;
+  }));
+}
 function catSpent(exps, cat){
   return sumCents(realSpend(exps).filter(function(e){ return e.category === cat; }));
 }
@@ -639,7 +659,8 @@ function underStreak(s, exps, k){
 }
 
 var logic = { tripDays:tripDays, dayNum:dayNum, cumAllow:cumAllow, allowForDay:allowForDay,
-  availableToday:availableToday, totalRemaining:totalRemaining, pace:pace, ddRemaining:ddRemaining,
+  availableToday:availableToday, totalRemaining:totalRemaining, pace:pace,
+  weekIndex:weekIndex, ddRemainingForWeek:ddRemainingForWeek,
   spentThrough:spentThrough, daySpent:daySpent, phase:phase, healthTier:healthTier };
 
 /* =========================================================
@@ -711,7 +732,7 @@ var LINES = {
   restored: "Un-deleted. The past is back, baby.",
   exported: "Backup made. Even your money has a fire escape now.",
   copied: "Backup copied to clipboard. Paste it somewhere safe (not the group chat).",
-  ddBlocked: "Not enough dining dollars left for that. They don't grow back. I checked.",
+  ddBlocked: "Not enough dining dollars left for that week. They respawn on Mondays. Patience.",
   imported: "Backup restored. It's like you never left. (You never left.)"
 };
 function seededPick(arr, extra){
@@ -895,7 +916,7 @@ function viewToday(){
       '<div class="stat"><div class="label">Days left</div><div class="v num" data-testid="days-left">' + dleft + '</div></div>' +
       '<div class="stat"><div class="label">Pace</div><div class="v num" data-testid="pace">' + fmt$(pc) + '/d</div></div>' +
     '</div>' +
-    '<div class="chip-row"><span class="chip" data-testid="dd-chip">🎓 Dining dollars: <b class="num">' + fmt$(ddRemaining(s, exps)) + '</b></span></div>' +
+    '<div class="chip-row"><span class="chip" data-testid="dd-chip">🎓 Dining dollars (week ' + (weekIndex(s, k) + 1) + '): <b class="num">' + fmt$(ddRemainingForWeek(s, exps, weekIndex(s, k))) + '</b></span></div>' +
   '</section>';
 
   html += '<section class="card"><h2 class="sec">Today’s damage <span class="faint num" style="font-weight:600">' + fmt$(spent) + '</span></h2>';
@@ -917,7 +938,7 @@ function viewCountdown(){
     '<div class="label">Trip starts in</div>' +
     '<div class="hero-days num">' + d + '</div>' +
     '<div class="muted" style="font-weight:600">day' + (d === 1 ? '' : 's') + ' · ' + fmtDay(s.tripStart) + ' → ' + fmtDay(s.tripEnd) + '</div>' +
-    '<div class="preview-line num">' + fmt$(s.totalBudgetCents) + ' over ' + tripDays(s) + ' days ≈ <b>' + fmt$(Math.round(s.totalBudgetCents / tripDays(s))) + '/day</b> + 🎓 ' + fmt$(s.diningDollarsStartCents) + ' dining dollars</div>' +
+    '<div class="preview-line num">' + fmt$(s.totalBudgetCents) + ' over ' + tripDays(s) + ' days ≈ <b>' + fmt$(Math.round(s.totalBudgetCents / tripDays(s))) + '/day</b> + 🎓 ' + fmt$(s.ddPerWeekCents) + '/week dining dollars</div>' +
   '</section>' +
   '<section class="card"><h2 class="sec">Pre-flight checklist</h2>' +
     '<div class="funstat"><span class="k">Customize quick-add buttons</span><span class="v">in Settings</span></div>' +
@@ -1038,7 +1059,7 @@ function viewSettings(){
     '<div class="funstat"><span class="k">The trip</span><span class="v">' + fmtDay(s.tripStart) + ' → ' + fmtDay(s.tripEnd) + '</span></div>' +
     '<div class="funstat"><span class="k">The budget</span><span class="v num">' + fmt$(s.totalBudgetCents) + '</span></div>' +
     '<div class="funstat"><span class="k">Works out to</span><span class="v num">' + fmt$(perDay) + '/day × ' + tripDays(s) + ' days</span></div>' +
-    '<div class="funstat"><span class="k">Dining dollars</span><span class="v num">' + fmt$(s.diningDollarsStartCents) + '</span></div>' +
+    '<div class="funstat"><span class="k">Dining dollars</span><span class="v num">' + fmt$(s.ddPerWeekCents) + ' / week</span></div>' +
     '<div class="chart-note">Carved into bedrock schist. Via said hardcode it, so it’s hardcoded.</div>' +
   '</section>';
 
@@ -1119,9 +1140,10 @@ function viewSheet(){
       '<div class="field"><span class="label">What was it</span><input type="text" id="f-note" data-testid="note-input" maxlength="80" value="' + esc(sh.note || '') + '" placeholder="dumplings, obviously"></div>' +
       '<div class="field" style="flex:0 0 152px"><span class="label">When</span><input type="date" id="f-date" data-testid="date-input" value="' + esc(sh.date) + '" min="' + addDays(state.settings.tripStart, -7) + '" max="' + (nowKey() > state.settings.tripEnd ? nowKey() : state.settings.tripEnd) + '"></div>' +
     '</div>';
-    var ddLeft = ddRemaining(state.settings, state.expenses) + (sh.mode === 'edit' && sh.wasDD ? sh.origAmount : 0);
+    var shWeek = weekIndex(state.settings, sh.date);
+    var ddLeft = ddRemainingForWeek(state.settings, state.expenses, shWeek, sh.mode === 'edit' ? sh.id : null);
     html += '<button class="dd-toggle" data-action="toggle-dd" data-testid="dd-toggle" aria-pressed="' + !!sh.diningDollars + '">' +
-      '🎓 Paid with dining dollars <span class="faint num">(' + fmt$(ddLeft) + ' left)</span><span class="knob"></span></button>';
+      '🎓 Paid with dining dollars <span class="faint num">(' + fmt$(ddLeft) + ' left wk ' + (shWeek + 1) + ')</span><span class="knob"></span></button>';
   } else {
     html += '<div class="field" style="margin-bottom:12px"><span class="label">Note it logs as</span><input type="text" id="f-note" maxlength="80" value="' + esc(sh.note || '') + '"></div>';
   }
@@ -1234,9 +1256,10 @@ function saveExpenseFromSheet(){
   }
   if (!isKey(sh.date)){ sh.err = 'That date is not a date.'; renderSheet(); return; }
   if (sh.diningDollars){
-    var left = ddRemaining(state.settings, state.expenses) + (sh.mode === 'edit' && sh.wasDD ? sh.origAmount : 0);
+    var w = weekIndex(state.settings, sh.date);
+    var left = ddRemainingForWeek(state.settings, state.expenses, w, sh.mode === 'edit' ? sh.id : null);
     if (cents > left){
-      sh.err = LINES.ddBlocked + ' (' + fmt$(left) + ' left.)';
+      sh.err = LINES.ddBlocked + ' (' + fmt$(left) + ' left in week ' + (w + 1) + '.)';
       sh.errSwitch = true; renderSheet(); return;
     }
   }
@@ -1312,7 +1335,7 @@ var actions = {
     if (!e) return;
     ui.sheet = { mode:'edit', id: e.id, amountCents: e.amountCents, amountRaw: '',
       category: e.category, note: e.note, date: e.date, diningDollars: e.diningDollars,
-      wasDD: e.diningDollars, origAmount: e.amountCents, err:'', errSwitch:false };
+      err:'', errSwitch:false };
     renderSheet();
   },
   'qa-add': function(){
@@ -1507,9 +1530,10 @@ function validateImport(raw){
   if (typeof v.schemaVersion !== 'number' || v.schemaVersion > SCHEMA)
     return { error: 'This backup is from a newer version of the app than this page. Update the page first.' };
   var s = v.settings;
+  var ddField = v.schemaVersion >= 2 ? s && s.ddPerWeekCents : s && s.diningDollarsStartCents;
   if (!s || !isKey(s.tripStart) || !isKey(s.tripEnd) || s.tripEnd < s.tripStart ||
       !Number.isInteger(s.totalBudgetCents) || s.totalBudgetCents <= 0 ||
-      !Number.isInteger(s.diningDollarsStartCents) || s.diningDollarsStartCents < 0)
+      !Number.isInteger(ddField) || ddField < 0)
     return { error: 'The settings in this backup are scrambled like a deli egg.' };
   if (!Array.isArray(v.expenses)) return { error: 'No expense list in there. Suspiciously clean books.' };
   for (var i = 0; i < v.expenses.length; i++){
@@ -1522,7 +1546,9 @@ function validateImport(raw){
     schemaVersion: SCHEMA,
     settings: {
       tripStart: s.tripStart, tripEnd: s.tripEnd,
-      totalBudgetCents: s.totalBudgetCents, diningDollarsStartCents: s.diningDollarsStartCents,
+      totalBudgetCents: s.totalBudgetCents,
+      // a v1 backup's one-pot dining dollars becomes the weekly allotment
+      ddPerWeekCents: v.schemaVersion >= 2 ? s.ddPerWeekCents : 3000,
       name: typeof s.name === 'string' && s.name.trim() ? s.name.trim().slice(0,20) : 'Via'
     },
     expenses: (function(){

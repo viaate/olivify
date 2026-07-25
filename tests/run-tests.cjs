@@ -82,7 +82,8 @@ test('1. first run before the trip → countdown + seeded defaults', async () =>
   assert.equal(stored.settings.tripStart, '2026-07-27');
   assert.equal(stored.settings.tripEnd, '2026-08-09');
   assert.equal(stored.settings.totalBudgetCents, 180000);
-  assert.equal(stored.settings.diningDollarsStartCents, 3000);
+  assert.equal(stored.settings.ddPerWeekCents, 3000);
+  assert.equal(stored.schemaVersion, 2);
   assert.equal(stored.quickAdds.length, 8);
   await close(p);
 });
@@ -333,6 +334,49 @@ test('19. sub-dollar amounts typed as ".75" are valid money', async () => {
   await p.fill('[data-testid=amount-input]', '.75');
   await p.click('[data-testid=save-expense]');
   assert.equal(await text(p, '[data-testid=headline-amount]'), fmt$(cumAllow(S, 2) - 75));
+  await close(p);
+});
+
+test('20. dining dollars reset weekly; back-dated spends hit their own week', async () => {
+  const seed = baseState({ expenses: [exp('dd1', '2026-07-28', 2500, 'eats', 'Halal cart', true)] });
+  const p = await page({ seed, now: '2026-08-03' });               // first day of week 2
+  const chip = await text(p, '[data-testid=dd-chip]');
+  assert.match(chip, /week 2/i, 'chip shows current week');
+  assert.match(chip, /\$30\.00/, 'fresh weekly pot despite $25 spent in week 1');
+  // $28 dated Aug 4 (week 2, $30 available) saves fine
+  await p.click('[data-testid=fab]');
+  await p.fill('[data-testid=amount-input]', '28');
+  await p.fill('[data-testid=date-input]', '2026-08-04');
+  await p.click('[data-testid=dd-toggle]');
+  await p.click('[data-testid=save-expense]');
+  let st = await p.evaluate(() => window.__test.getState());
+  assert.equal(st.expenses.filter(e => e.diningDollars).length, 2);
+  // $28 back-dated to Jul 29 (week 1 has only $5 left) is blocked
+  await p.click('[data-testid=fab]');
+  await p.fill('[data-testid=amount-input]', '28');
+  await p.fill('[data-testid=date-input]', '2026-07-29');
+  await p.click('[data-testid=dd-toggle]');
+  await p.click('[data-testid=save-expense]');
+  assert.match(await text(p, '[data-testid=sheet-err]'), /\$5\.00 left in week 1/);
+  await close(p);
+});
+
+test('21. v1 data on the phone migrates to v2 with a .bak of the original', async () => {
+  const v1 = JSON.parse(JSON.stringify(baseState({
+    expenses: [exp('e_a', '2026-07-27', 10000, 'eats', 'Big bagel energy')],
+  })));
+  v1.schemaVersion = 1;
+  delete v1.settings.ddPerWeekCents;
+  v1.settings.diningDollarsStartCents = 3000;
+  const p = await page({ seed: v1, now: '2026-07-28' });
+  const stored = await p.evaluate(k => JSON.parse(localStorage.getItem(k)), KEY);
+  assert.equal(stored.schemaVersion, 2, 'migrated to v2');
+  assert.equal(stored.settings.ddPerWeekCents, 3000);
+  assert.ok(!('diningDollarsStartCents' in stored.settings), 'old field removed');
+  assert.equal(stored.expenses.length, 1, 'expenses intact');
+  const bak = await p.evaluate(k => JSON.parse(localStorage.getItem(k + '.bak')), KEY);
+  assert.equal(bak.schemaVersion, 1, '.bak preserves the pre-migration original');
+  assert.match(await text(p, '[data-testid=dd-chip]'), /week 1/i, 'app renders normally post-migration');
   await close(p);
 });
 

@@ -19,9 +19,10 @@ screen.
   at exactly $0.
 - **Three categories**, styled as subway line bullets: **E**ats (food & drinks),
   **F**un (going out), **S**tuff (shopping & misc).
-- **Dining dollars** are a separate mini-balance — flagged expenses draw from
-  the $30, never the $1,800, and can't overdraw it (one tap switches a blocked
-  charge to the real budget).
+- **Dining dollars** are a separate mini-balance of **$30 per week,
+  use-it-or-lose-it** (week 1 = Jul 27–Aug 2, week 2 = Aug 3–9). Flagged
+  expenses draw from the week their *date* falls in, never the $1,800, and
+  can't overdraw a week (one tap switches a blocked charge to the real budget).
 - Day boundaries are **America/New_York** regardless of device timezone.
 - All money is integer cents; the per-day allowances sum to exactly the total.
 - Trip dates and totals are **hardcoded by design** (per Via) — Settings shows
