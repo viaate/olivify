@@ -216,16 +216,16 @@ test('10. blowing the whole budget: negative red headline, rat notices', async (
   await close(p);
 });
 
-test('11. editing trip dates recomputes everything (live preview too)', async () => {
+test('11. trip facts are hardcoded: no date/budget inputs, tools remain', async () => {
   const p = await page({ seed: SEED4, now: '2026-07-30' });
   await p.click('[data-testid=tab-settings]');
-  await p.fill('[data-testid=set-end]', '2026-08-16');
-  assert.match(await text(p, '[data-testid=preview-perday]'), /21 days/);
-  await p.click('[data-testid=settings-save]');
-  await p.click('[data-testid=tab-today]');
-  const s21 = { ...S, tripEnd: '2026-08-16' };
-  assert.equal(await text(p, '[data-testid=headline-amount]'), fmt$(cumAllow(s21, 4) - 25000));
-  assert.equal(await text(p, '[data-testid=days-left]'), '18');
+  assert.equal(await p.locator('[data-testid=set-start]').count(), 0, 'no start-date input');
+  assert.equal(await p.locator('[data-testid=set-end]').count(), 0, 'no end-date input');
+  assert.equal(await p.locator('[data-testid=set-budget]').count(), 0, 'no budget input');
+  assert.equal(await p.locator('[data-testid=set-dd]').count(), 0, 'no dining-dollars input');
+  assert.match(await text(p, '#screen'), /\$1,800\.00/);
+  assert.ok(await p.locator('[data-testid=export-json]').isVisible(), 'backups still there');
+  assert.ok(await p.locator('[data-testid=qa-add]').isVisible(), 'quick-add manager still there');
   await close(p);
 });
 

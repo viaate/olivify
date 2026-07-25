@@ -24,6 +24,8 @@ screen.
   charge to the real budget).
 - Day boundaries are **America/New_York** regardless of device timezone.
 - All money is integer cents; the per-day allowances sum to exactly the total.
+- Trip dates and totals are **hardcoded by design** (per Via) — Settings shows
+  them read-only; only quick-add buttons and backups are editable.
 
 ## Data & backups
 

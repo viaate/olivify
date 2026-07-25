@@ -257,7 +257,7 @@ input,select,textarea{font:inherit; color:var(--ink)}
 .funstat .v{font-weight:700; text-align:right}
 
 /* ---- settings ---- */
-.set-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.card.receipt{border-radius:3px}
 .field{display:flex; flex-direction:column; gap:5px}
 .field.wide{grid-column:1 / -1}
 .field input[type=text], .field input[type=date], .field input[type=number], .field textarea{
@@ -708,7 +708,6 @@ var LINES = {
   exported: "Backup made. Even your money has a fire escape now.",
   copied: "Backup copied to clipboard. Paste it somewhere safe (not the group chat).",
   ddBlocked: "Not enough dining dollars left for that. They don't grow back. I checked.",
-  settingsSaved: "Settings saved. Weirdly responsible of you.",
   imported: "Backup restored. It's like you never left. (You never left.)"
 };
 function seededPick(arr, extra){
@@ -836,14 +835,14 @@ function viewSign(){
 function viewBanners(){
   var html = '';
   if (ui.readOnly){
-    html += '<div class="banner" data-testid="readonly-banner">🚧 This page is older than your data (someone updated the app elsewhere). Read-only to keep your stuff safe — export a backup below.</div>';
+    html += '<div class="banner" data-testid="readonly-banner">This page is older than your data (someone updated the app elsewhere). Read-only to keep your stuff safe — export a backup below.</div>';
   }
   if (ui.memoryMode && !ui.bannerDismissed.mem){
-    html += '<div class="banner" data-testid="storage-banner">🚨 Storage is busted like a weekend L train. Your data only lives in this tab right now — go to Settings and export a backup ASAP.' +
+    html += '<div class="banner" data-testid="storage-banner">Storage is busted like a weekend L train. Your data only lives in this tab right now — go to Settings and export a backup ASAP.' +
       '<button class="bx" data-action="dismiss-banner" data-b="mem" aria-label="Dismiss">✕</button></div>';
   }
   if (ui.corruptRaw && !ui.bannerDismissed.corrupt){
-    html += '<div class="banner" data-testid="corrupt-banner">🗄️ Found your old data in a weird state (very Port Authority of it). It’s stashed raw — copy it before it’s lost.' +
+    html += '<div class="banner" data-testid="corrupt-banner">Found your old data in a weird state (very Port Authority of it). It’s stashed raw — copy it before it’s lost.' +
       '<button class="small btn" style="width:auto;margin:0 0 0 8px" data-action="copy-corrupt">Copy</button>' +
       '<button class="bx" data-action="dismiss-banner" data-b="corrupt" aria-label="Dismiss">✕</button></div>';
   }
@@ -917,9 +916,9 @@ function viewCountdown(){
     '<div class="preview-line num">' + fmt$(s.totalBudgetCents) + ' over ' + tripDays(s) + ' days ≈ <b>' + fmt$(Math.round(s.totalBudgetCents / tripDays(s))) + '/day</b> + 🎓 ' + fmt$(s.diningDollarsStartCents) + ' dining dollars</div>' +
   '</section>' +
   '<section class="card"><h2 class="sec">Pre-flight checklist</h2>' +
-    '<div class="funstat"><span class="k">Customize quick-add buttons</span><span class="v">Settings ⚙️</span></div>' +
-    '<div class="funstat"><span class="k">Add app to home screen</span><span class="v">Share → Add 📲</span></div>' +
-    '<div class="funstat"><span class="k">Practice saying “I’m walking here”</span><span class="v">Ongoing 🗽</span></div>' +
+    '<div class="funstat"><span class="k">Customize quick-add buttons</span><span class="v">in Settings</span></div>' +
+    '<div class="funstat"><span class="k">Add this page to your home screen</span><span class="v">Share → Add</span></div>' +
+    '<div class="funstat"><span class="k">Practice saying “I’m walking here”</span><span class="v">ongoing</span></div>' +
     '<div class="center-empty">Any spending you log before the 27th counts toward Day 1. The rat allows pre-gaming.</div>' +
   '</section>';
 }
@@ -950,7 +949,7 @@ function viewWrapup(){
       '<div class="stat"><div class="label">' + (rem >= 0 ? 'Left over' : 'Over by') + '</div><div class="v num' + (rem < 0 ? ' over' : '') + '">' + fmt$(Math.abs(rem)) + '</div></div>' +
       '<div class="stat"><div class="label">Biggest day</div><div class="v num">' + (biggestDay ? fmt$(biggestAmt) : '—') + '</div></div>' +
     '</div>' +
-    '<button class="btn primary" data-action="export-json" data-testid="export-json">Save the evidence (backup) 📄</button>' +
+    '<button class="btn primary" data-action="export-json" data-testid="export-json">Save the evidence (backup)</button>' +
   '</section>' +
   '<section class="card">' + viewStatsInner() + '</section>';
 }
@@ -1031,16 +1030,12 @@ function viewStats(){
 function viewSettings(){
   var s = state.settings;
   var perDay = Math.round(s.totalBudgetCents / tripDays(s));
-  var html = '<section class="card"><h2 class="sec">The fine print</h2>' +
-    '<div class="set-grid">' +
-      '<div class="field"><span class="label">Trip starts</span><input type="date" id="set-start" data-testid="set-start" value="' + esc(s.tripStart) + '"></div>' +
-      '<div class="field"><span class="label">Trip ends</span><input type="date" id="set-end" data-testid="set-end" value="' + esc(s.tripEnd) + '"></div>' +
-      '<div class="field"><span class="label">Total budget $</span><input type="text" inputmode="decimal" id="set-budget" data-testid="set-budget" value="' + (s.totalBudgetCents/100) + '"></div>' +
-      '<div class="field"><span class="label">Dining dollars $</span><input type="text" inputmode="decimal" id="set-dd" data-testid="set-dd" value="' + (s.diningDollarsStartCents/100) + '"></div>' +
-    '</div>' +
-    '<div class="preview-line" data-testid="preview-perday">That’s <b>' + fmt$(perDay) + '/day</b> for ' + tripDays(s) + ' days.</div>' +
-    '<div class="err" id="set-err"></div>' +
-    '<button class="btn primary" data-action="settings-save" data-testid="settings-save"' + (ui.readOnly ? ' disabled' : '') + '>Save the fine print</button>' +
+  var html = '<section class="card"><h2 class="sec">The deal</h2>' +
+    '<div class="funstat"><span class="k">The trip</span><span class="v">' + fmtDay(s.tripStart) + ' → ' + fmtDay(s.tripEnd) + '</span></div>' +
+    '<div class="funstat"><span class="k">The budget</span><span class="v num">' + fmt$(s.totalBudgetCents) + '</span></div>' +
+    '<div class="funstat"><span class="k">Works out to</span><span class="v num">' + fmt$(perDay) + '/day × ' + tripDays(s) + ' days</span></div>' +
+    '<div class="funstat"><span class="k">Dining dollars</span><span class="v num">' + fmt$(s.diningDollarsStartCents) + '</span></div>' +
+    '<div class="chart-note">Carved into bedrock schist. Via said hardcode it, so it’s hardcoded.</div>' +
   '</section>';
 
   html += '<section class="card"><h2 class="sec">Quick-add buttons</h2>' +
@@ -1050,12 +1045,12 @@ function viewSettings(){
         ' <span class="faint" style="font-weight:400">· ' + CATS[q.category].label + '</span></span>' +
         '<span class="p num">' + fmt$(q.amountCents) + '</span></button>';
     }).join('') +
-    '<button class="btn" data-action="qa-add" data-testid="qa-add">＋ New button</button>' +
+    '<button class="btn" data-action="qa-add" data-testid="qa-add">Add a button</button>' +
   '</section>';
 
   html += '<section class="card"><h2 class="sec">Backups (your money’s fire escape)</h2>' +
-    '<button class="btn" data-action="export-json" data-testid="export-json">Export backup (JSON) 📄</button>' +
-    '<button class="btn" data-action="export-csv" data-testid="export-csv">Export spreadsheet (CSV) 📊</button>' +
+    '<button class="btn" data-action="export-json" data-testid="export-json">Export backup (JSON)</button>' +
+    '<button class="btn" data-action="export-csv" data-testid="export-csv">Export spreadsheet (CSV)</button>' +
     '<div class="field wide" style="margin-top:14px"><span class="label">Restore: paste a backup here</span>' +
       '<textarea id="import-text" data-testid="import-text" placeholder=\'{"schemaVersion":1,...}\'></textarea></div>' +
     '<button class="btn" data-action="import-check" data-testid="import-check">Check it</button>' +
@@ -1065,7 +1060,7 @@ function viewSettings(){
   html += '<section class="card"><h2 class="sec">The board of directors</h2>' +
     '<div class="muted" style="font-size:14px">The ' + esc(s.name) + '-nancial District v1. Built for ' + esc(s.name) + ', one (1) legendary New-Yorker-in-training — she runs this town now.<br><br>' +
     'CFO: Carlo “Slice” Ratigan (Chief Fiscal Rodent). Salary: one (1) slice, non-negotiable. No pigeons were consulted.</div>' +
-    '<button class="btn destructive" data-action="reset-all" data-testid="reset-all">' + (ui.confirmReset ? 'Tap again to REALLY burn it all down 🔥' : 'Burn it all down (reset)') + '</button>' +
+    '<button class="btn destructive" data-action="reset-all" data-testid="reset-all">' + (ui.confirmReset ? 'Tap again to REALLY burn it all down' : 'Burn it all down (reset)') + '</button>' +
   '</section>';
   return html;
 }
@@ -1128,10 +1123,10 @@ function viewSheet(){
 
   html += '<div class="err" id="sheet-err" data-testid="sheet-err">' + esc(sh.err || '') + '</div>';
   if (sh.errSwitch){
-    html += '<button class="btn" data-action="dd-switch" data-testid="dd-switch">Charge the real budget instead 💸</button>';
+    html += '<button class="btn" data-action="dd-switch" data-testid="dd-switch">Charge the real budget instead</button>';
   }
   html += '<div class="sheet-actions">';
-  if (sh.mode === 'edit') html += '<button class="btn destructive" data-action="sheet-delete" data-testid="delete-expense" style="flex:0 0 34%">Yeet it 🗑️</button>';
+  if (sh.mode === 'edit') html += '<button class="btn destructive" data-action="sheet-delete" data-testid="delete-expense" style="flex:0 0 34%">Yeet it</button>';
   if (sh.mode === 'qa-edit') html += '<button class="btn destructive" data-action="qa-delete" style="flex:0 0 34%">Remove</button>';
   html += '<button class="btn primary" data-action="sheet-save" data-testid="save-expense"' + (ui.readOnly ? ' disabled' : '') + '>' +
     (isQA ? 'Save button' : esc(seededPick(LINES.saveBtn, 'btn'))) + '</button></div></div>';
@@ -1320,7 +1315,6 @@ var actions = {
     commit(function(st){ st.quickAdds = st.quickAdds.filter(function(x){ return x.id !== id; }); });
     toast('Button removed. It served honorably.');
   },
-  'settings-save': function(){ saveSettings(); },
   'dismiss-banner': function(el){ ui.bannerDismissed[el.dataset.b] = true; render(); },
   'copy-corrupt': function(){ copyText(ui.corruptRaw || ''); toast('Old data copied. Paranoia rewarded.'); },
   'export-json': function(){ exportJSON(); },
@@ -1362,47 +1356,11 @@ function saveQuickAddFromSheet(){
   toast('Quick button ready. Tap responsibly.');
 }
 
-function saveSettings(){
-  var startEl = document.getElementById('set-start'), endEl = document.getElementById('set-end');
-  var bEl = document.getElementById('set-budget'), dEl = document.getElementById('set-dd');
-  var errEl = document.getElementById('set-err');
-  var start = startEl.value, end = endEl.value;
-  var budget = parseCents(bEl.value), dd = parseCents(dEl.value);
-  var err = '';
-  if (!isKey(start) || !isKey(end)) err = 'Those dates are giving “train delayed indefinitely”.';
-  else if (end < start) err = 'The trip can’t end before it starts. This isn’t Tenet.';
-  else if (diffDays(start, end) > 120) err = 'Over 120 days is not a trip, it’s a lease.';
-  else if (budget == null || budget <= 0) err = 'The budget needs to be actual money.';
-  else if (dd == null) err = 'Dining dollars: a number, please. Zero is fine. Sad, but fine.';
-  if (err){ errEl.textContent = err; return; }
-  commit(function(st){
-    st.settings.tripStart = start; st.settings.tripEnd = end;
-    st.settings.totalBudgetCents = budget; st.settings.diningDollarsStartCents = dd;
-  });
-  toast(LINES.settingsSaved);
-}
-
-/* live per-day preview while poking settings inputs */
-function settingsPreview(){
-  var startEl = document.getElementById('set-start');
-  if (!startEl) return;
-  var end = document.getElementById('set-end').value;
-  var b = parseCents(document.getElementById('set-budget').value);
-  var pv = document.querySelector('[data-testid="preview-perday"]');
-  if (pv && isKey(startEl.value) && isKey(end) && end >= startEl.value && b != null && b > 0){
-    var days = diffDays(startEl.value, end) + 1;
-    pv.innerHTML = 'That’s <b>' + fmt$(Math.round(b / days)) + '/day</b> for ' + days + ' days.';
-  }
-}
-
 document.addEventListener('click', function(ev){
   var el = ev.target.closest('[data-action]');
   if (!el) return;
   var fn = actions[el.dataset.action];
   if (fn) fn(el);
-});
-document.addEventListener('input', function(ev){
-  if (ev.target.closest('#set-start, #set-end, #set-budget, #set-dd')) settingsPreview();
 });
 /* pace chart touch/pointer inspection */
 document.addEventListener('pointermove', paceInspect);
