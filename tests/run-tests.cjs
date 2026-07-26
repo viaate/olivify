@@ -41,6 +41,7 @@ async function page(opts = {}) {
     deviceScaleFactor: 3,
     hasTouch: true,
     colorScheme: opts.colorScheme || 'light',
+    ...(opts.userAgent ? { userAgent: opts.userAgent } : {}),
   });
   const p = await ctx.newPage();
   if (opts.seed) {
@@ -391,8 +392,14 @@ test('22. zoom guards: no auto-focused input, 16px+ fields, capped viewport', as
       .filter(x => x.size < 16));
   assert.deepEqual(small, [], 'no text input under 16px (iOS zoom trigger)');
   const vp = await p.evaluate(() => document.head.querySelector('meta[name=viewport]').content);
-  assert.match(vp, /maximum-scale=1/, 'head viewport suppresses focus auto-zoom');
+  assert.doesNotMatch(vp, /maximum-scale/, 'non-iOS keeps pinch-zoom unrestricted');
   await close(p);
+  // iOS UA gets the auto-zoom suppressor (Safari 10+ still allows pinch there)
+  const ios = await page({ seed: baseState(), now: '2026-07-28',
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
+  const vpIos = await ios.evaluate(() => document.head.querySelector('meta[name=viewport]').content);
+  assert.match(vpIos, /maximum-scale=1/, 'iOS head viewport suppresses focus auto-zoom');
+  await close(ios);
 });
 
 test('23. afford-it calculator forecasts exact damage', async () => {
@@ -402,15 +409,26 @@ test('23. afford-it calculator forecasts exact damage', async () => {
   const out = await text(p, '[data-testid=afford-out]');
   assert.match(out, /\$164\.29/, 'today-after-buying = availableToday − $100');
   assert.match(out, new RegExp((Math.floor(145000 / 11) / 100).toFixed(2).replace('.', '\\.')), 'new pace = floor((remaining−100)/11)');
+  // a full re-render (rat tap) must not wipe the input or the verdict
+  await p.click('.rat-btn');
+  assert.equal(await p.inputValue('[data-testid=afford-input]'), '100', 'input survives rat tap');
+  assert.match(await text(p, '[data-testid=afford-out]'), /\$164\.29/, 'verdict survives rat tap');
   await close(p);
 });
 
-test('24. split-by-N divides the typed amount', async () => {
+test('24. split-by-N divides the ORIGINAL amount, never compounds', async () => {
   const p = await page({ seed: baseState(), now: '2026-07-28' });
   await p.click('[data-testid=fab]');
   await p.fill('[data-testid=amount-input]', '84');
   await p.click('[data-testid=split-4]');
   assert.equal(await p.inputValue('[data-testid=amount-input]'), '21');
+  await p.click('[data-testid=split-4]');
+  assert.equal(await p.inputValue('[data-testid=amount-input]'), '21', 'double-tap does not compound');
+  await p.click('[data-testid=split-3]');
+  assert.equal(await p.inputValue('[data-testid=amount-input]'), '28', 'divisor correction uses the original $84');
+  await p.fill('[data-testid=amount-input]', '30');
+  await p.click('[data-testid=split-2]');
+  assert.equal(await p.inputValue('[data-testid=amount-input]'), '15', 'manual edit resets the base');
   await close(p);
 });
 
@@ -445,6 +463,10 @@ test('26. report card renders a real PNG in the share overlay', async () => {
   assert.ok(src.length > 10000, 'non-trivial image (' + src.length + ' chars)');
   await p.click('[data-testid=share-close]');
   assert.equal(await p.locator('[data-testid=share-overlay]').count(), 0, 'overlay closes');
+  await p.click('[data-testid=share-trip]');
+  assert.ok(await p.locator('[data-testid=share-overlay]').isVisible());
+  await p.keyboard.press('Escape');
+  assert.equal(await p.locator('[data-testid=share-overlay]').count(), 0, 'Escape closes the overlay');
   await close(p);
 });
 

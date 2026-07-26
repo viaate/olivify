@@ -1,5 +1,5 @@
 <title>The Via-nancial District</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 <style>
 /* ============================================================
@@ -299,7 +299,7 @@ button,input,select,textarea,a{touch-action:manipulation}
 .banner .bx{margin-left:auto; font-weight:800; padding:0 4px; min-height:32px}
 #toast-zone{
   position:fixed; left:50%; transform:translateX(-50%);
-  bottom:calc(96px + env(safe-area-inset-bottom)); z-index:60; width:min(92vw, 480px);
+  bottom:calc(96px + env(safe-area-inset-bottom)); z-index:96; width:min(92vw, 480px);
 }
 .toast{
   background:var(--sign); color:var(--sign-ink); border-radius:10px;
@@ -441,8 +441,8 @@ h2.sec{font-size:16px; font-weight:800; margin:0 0 10px}
   font-size:13px; line-height:1.5}
 .advisory .ah{display:flex; align-items:center; font-size:10px; font-weight:800;
   letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:3px}
-.advisory .ah button{margin-left:auto; color:var(--sign-ink); font-weight:800;
-  min-height:30px; padding:0 6px}
+.advisory .ah button{margin:-10px -8px -10px auto; color:var(--sign-ink); font-weight:800;
+  min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center}
 
 /* ---- share overlay ---- */
 #share-zone .share-back{position:fixed; inset:0; z-index:80; background:rgba(6,7,8,.86);
@@ -613,9 +613,11 @@ function load(){
     return;
   }
   if (typeof parsed.schemaVersion === 'number' && parsed.schemaVersion > SCHEMA){
-    // data written by a NEWER page than this one: read-only, never write
+    // data written by a NEWER page than this one: read-only, never write.
+    // meta still gets in-memory defaults (never saved) so render paths hold.
     ui.readOnly = true;
     state = parsed;
+    state.meta = metaDefaults(state.meta);
     return;
   }
   if (parsed.schemaVersion < SCHEMA){
@@ -629,7 +631,7 @@ function load(){
     state = parsed;
   }
   if (!Array.isArray(state.quickAdds)) state.quickAdds = defaultQuickAdds();
-  if (!ui.readOnly) state.meta = metaDefaults(state.meta);
+  state.meta = metaDefaults(state.meta);
 }
 function save(){
   if (ui.readOnly) return false;
@@ -828,7 +830,7 @@ var ACHIEVEMENTS = [
   { id:'bodega', emoji:'🥯', name:'Bodega Baron', desc:'5 bodega runs. The cat nods at you now.',
     test:function(st){ return noteCount(st, /bodega/i) >= 5; } },
   { id:'museum', emoji:'🖼️', name:'Museum Rat', desc:'3 museum-ish visits. Culture acquired.',
-    test:function(st){ return noteCount(st, /museum|moma|gallery|\bmet\b/i) >= 3; } },
+    test:function(st){ return noteCount(st, /museum|moma|gallery|whitney|guggenheim|\bthe met\b|\bmet (museum|gala|cloisters)\b/i) >= 3; } },
   { id:'early', emoji:'🌅', name:'Early Bird', desc:'Log something before 9am. Who ARE you?',
     test:function(st){ return st.expenses.some(function(e){ return nyHour(e.createdAt) < 9; }); } },
   { id:'owl', emoji:'🦉', name:'Night Owl', desc:'Log something after 11pm. The city that never sleeps, and neither do you apparently.',
@@ -940,6 +942,9 @@ function ratSVG(o){
       '<circle cx="96" cy="10" r="2.6" fill="var(--accent)"/>';
   }
   return svg + '</svg>';
+}
+function currentQuip(){
+  return ui.ratQuipDay === nowKey() ? ui.ratQuip : null;  // quips expire at day flip
 }
 function ratRow(opts, bubble){
   return '<div class="rat-row">' +
@@ -1084,15 +1089,29 @@ function confettiBurst(){
 }
 
 /* ---- canvas report cards (1080x1920, sign-styled, story-sized) ---- */
+function gradeTiers(frac){
+  if (frac >= 0.1)  return { grade:'A+', quip:'Suspiciously Solvent. Did you even leave the dorm?' };
+  if (frac >= 0)    return { grade:'A',  quip:'Landed the plane. On budget. In New York. Unheard of.' };
+  if (frac >= -0.05) return { grade:'B+', quip:'Brokelyn-adjacent, but with excellent stories.' };
+  if (frac >= -0.15) return { grade:'C',  quip:'Creative Accounting. The rat respects the hustle.' };
+  return { grade:'F', quip:'Financial Performance Art. Tuition for the school of life.' };
+}
 function tripGrade(){
   var s = state.settings, exps = state.expenses;
   var rem = totalRemaining(s, exps);
-  var frac = s.totalBudgetCents > 0 ? rem / s.totalBudgetCents : 0;
-  if (frac >= 0.1)  return { grade:'A+', quip:'Suspiciously Solvent. Did you even leave the dorm?', rem: rem };
-  if (frac >= 0)    return { grade:'A',  quip:'Landed the plane. On budget. In New York. Unheard of.', rem: rem };
-  if (frac >= -0.05) return { grade:'B+', quip:'Brokelyn-adjacent, but with excellent stories.', rem: rem };
-  if (frac >= -0.15) return { grade:'C',  quip:'Creative Accounting. The rat respects the hustle.', rem: rem };
-  return { grade:'F', quip:'Financial Performance Art. Tuition for the school of life.', rem: rem };
+  var g = gradeTiers(s.totalBudgetCents > 0 ? rem / s.totalBudgetCents : 0);
+  g.rem = rem;
+  return g;
+}
+/* mid-trip grading compares to the PLAN SO FAR, not the whole budget —
+   otherwise day 3 is always an unearned A+ */
+function gradeSoFar(k){
+  var s = state.settings, exps = state.expenses;
+  var planned = cumAllow(s, dayNum(s, k));
+  var cushion = planned - spentThrough(s, exps, k);
+  var g = gradeTiers(planned > 0 ? cushion / planned : 0);
+  g.rem = cushion;
+  return g;
 }
 function drawCanvasRat(ctx, x, y, sc){
   function E(cx, cy, rx, ry, fill){ ctx.beginPath(); ctx.ellipse(x+cx*sc, y+cy*sc, rx*sc, ry*sc, 0, 0, 6.29); ctx.fillStyle = fill; ctx.fill(); }
@@ -1128,15 +1147,17 @@ function makeCardCanvas(kind){
   ctx.fillStyle = '#000'; ctx.fillRect(70, 90, W-140, 240);
   ctx.fillStyle = YEL; ctx.fillRect(70, 330, W-140, 14);
   ctx.fillStyle = INKW; ctx.font = cardFont(64);
-  ctx.fillText('THE ' + (s.name || 'VIA').toUpperCase() + '-NANCIAL', 110, 195);
-  ctx.fillText('DISTRICT', 110, 275);
+  ctx.fillText('THE ' + (s.name || 'VIA').toUpperCase() + '-NANCIAL', 110, 195, 690);
+  ctx.fillText('DISTRICT', 110, 275, 690);
   [['#12a355','E'],['#e8641f','F'],['#4b82e8','S']].forEach(function(b, i){
     ctx.beginPath(); ctx.arc(830 + i*62, 250, 26, 0, 6.29); ctx.fillStyle = b[0]; ctx.fill();
     ctx.fillStyle = '#fff'; ctx.font = cardFont(28); ctx.fillText(b[1], 830 + i*62 - 10, 260);
   });
-  function label(t, y){ ctx.fillStyle = MUT; ctx.font = cardFont(34, 700); ctx.fillText(t.toUpperCase(), 110, y); }
-  function big(t, y, color, px){ ctx.fillStyle = color || INKW; ctx.font = cardFont(px || 150); ctx.fillText(t, 110, y); }
-  function line(t, y, color, px, weight){ ctx.fillStyle = color || INKW; ctx.font = cardFont(px || 42, weight || 700); ctx.fillText(t, 110, y); }
+  var MAXW = 860;
+  function label(t, y){ ctx.fillStyle = MUT; ctx.font = cardFont(34, 700); ctx.fillText(t.toUpperCase(), 110, y, MAXW); }
+  function big(t, y, color, px){ ctx.fillStyle = color || INKW; ctx.font = cardFont(px || 150); ctx.fillText(t, 110, y, MAXW); }
+  function line(t, y, color, px, weight){ ctx.fillStyle = color || INKW; ctx.font = cardFont(px || 42, weight || 700); ctx.fillText(t, 110, y, MAXW); }
+  function trunc(t, n){ t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
   if (kind === 'day'){
     var n = dayNum(s, k), allow = allowForDay(s, n), spent = daySpent(exps, k);
     var under = spent <= allow;
@@ -1147,13 +1168,17 @@ function makeCardCanvas(kind){
     line(under ? 'UNDER BUDGET. The rat nods slowly.' : 'OVER BUDGET. The rat is making a note.', 880, under ? '#3dbd77' : '#ff6f61', 44);
     var todays = exps.filter(function(e){ return e.date === k && !e.diningDollars; })
       .sort(function(a,b){ return b.amountCents - a.amountCents; });
-    if (todays[0]) line('Biggest hit: ' + (todays[0].note || CATS[todays[0].category].full) + ' · ' + fmt$(todays[0].amountCents), 970, INKW, 40);
+    if (todays[0]) line('Biggest hit: ' + trunc(todays[0].note || CATS[todays[0].category].full, 24) + ' · ' + fmt$(todays[0].amountCents), 970, INKW, 40);
     line('Streak: ' + underStreak(s, exps, k) + ' day(s) under budget', 1050, MUT, 40);
     line('Left overall: ' + fmt$(totalRemaining(s, exps)), 1130, INKW, 44);
   } else {
-    var g = tripGrade();
+    var during = phase(s, k) === 'during';
+    var g = during ? gradeSoFar(k) : tripGrade();
     var spentAll = totalSpent(exps);
-    label('Final report card · ' + fmtDay(s.tripStart) + ' – ' + fmtDay(s.tripEnd), 450);
+    var remAll = totalRemaining(s, exps);
+    label(during
+      ? 'Report card so far · Day ' + dayNum(s, k) + ' of ' + tripDays(s)
+      : 'Final report card · ' + fmtDay(s.tripStart) + ' – ' + fmtDay(s.tripEnd), 450);
     ctx.save(); ctx.translate(190, 720); ctx.rotate(-0.07);
     ctx.strokeStyle = g.rem >= 0 ? '#3dbd77' : '#ff6f61'; ctx.lineWidth = 10;
     ctx.strokeRect(-80, -140, 340, 220);
@@ -1161,14 +1186,15 @@ function makeCardCanvas(kind){
     ctx.fillText(g.grade, -40, 40);
     ctx.restore();
     line(g.quip, 900, INKW, 42);
-    line('Spent: ' + fmt$(spentAll) + '  ·  ' + (g.rem >= 0 ? 'Left: ' : 'Over by: ') + fmt$(Math.abs(g.rem)), 1000, INKW, 46);
+    if (during) line((g.rem >= 0 ? 'Cushion vs the plan so far: ' : 'Behind the plan so far by: ') + fmt$(Math.abs(g.rem)), 980, MUT, 38);
+    line('Spent: ' + fmt$(spentAll) + '  ·  ' + (remAll >= 0 ? 'Left: ' : 'Over by: ') + fmt$(Math.abs(remAll)), during ? 1050 : 1000, INKW, 46);
     CAT_ORDER.forEach(function(cat, i){
       var y = 1100 + i * 74;
       ctx.beginPath(); ctx.arc(135, y - 14, 22, 0, 6.29);
       ctx.fillStyle = themeColor('--' + cat, '#888'); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.font = cardFont(24); ctx.fillText(CATS[cat].letter, 127, y - 5);
       ctx.fillStyle = INKW; ctx.font = cardFont(40, 700);
-      ctx.fillText(CATS[cat].label + ' — ' + fmt$(catSpent(exps, cat)), 180, y);
+      ctx.fillText(CATS[cat].label + ' — ' + fmt$(catSpent(exps, cat)), 180, y, 790);
     });
   }
   drawCanvasRat(ctx, 620, 1380, 3);
@@ -1184,11 +1210,13 @@ function showShareCard(kind){
   var url = canvas.toDataURL('image/png');
   var canDl = !!(window.claude && window.claude.downloads && window.claude.downloads.save);
   document.getElementById('share-zone').innerHTML =
-    '<div class="share-back" data-testid="share-overlay">' +
+    '<div class="share-back" role="dialog" aria-modal="true" aria-label="Report card" data-testid="share-overlay">' +
     '<img class="share-img" data-testid="share-img" alt="Report card" src="' + url + '">' +
     '<div class="share-hint">Long-press the card → “Add to Photos” to save it</div>' +
     (canDl ? '<button class="btn primary" data-action="share-download" data-testid="share-download">Download PNG</button>' : '') +
     '<button class="btn" data-action="share-close" data-testid="share-close">Done</button></div>';
+  var done = document.querySelector('[data-testid=share-close]');
+  if (done) done.focus();
 }
 
 /* =========================================================
@@ -1273,7 +1301,7 @@ function viewToday(){
   var pctOfToday = allow > 0 ? Math.min(spent / allow, 1) : 1;
 
   var html = advisoryHTML();
-  html += ratRow({ tier: tier, streak: underStreak(s, exps, k) }, ui.ratQuip || ratLine(tier));
+  html += ratRow({ tier: tier, streak: underStreak(s, exps, k) }, currentQuip() || ratLine(tier));
 
   html += '<section class="card">' +
     '<div class="label">You can spend today</div>' +
@@ -1298,10 +1326,10 @@ function viewToday(){
 
   html += '<section class="card"><h2 class="sec">Can I afford it?</h2>' +
     '<div class="afford-row">' +
-      '<input type="text" inputmode="decimal" id="afford-amt" data-testid="afford-input" placeholder="e.g. 89 for that Broadway seat" aria-label="Price to check">' +
+      '<input type="text" inputmode="decimal" id="afford-amt" data-testid="afford-input" value="' + esc(ui.affordRaw || '') + '" placeholder="e.g. 89 for that Broadway seat" aria-label="Price to check">' +
       '<button class="btn" data-action="afford" data-testid="afford-btn">Ask the rat</button>' +
     '</div>' +
-    '<div class="preview-line" id="afford-out" data-testid="afford-out"></div>' +
+    '<div class="preview-line" id="afford-out" data-testid="afford-out">' + (ui.affordOut || '') + '</div>' +
   '</section>';
   return html;
 }
@@ -1309,7 +1337,7 @@ function viewToday(){
 function viewCountdown(){
   var s = state.settings, k = nowKey();
   var d = diffDays(k, s.tripStart);
-  return ratRow({ tier: 'pretrip' }, ui.ratQuip || ratLine('pretrip')) +
+  return ratRow({ tier: 'pretrip' }, currentQuip() || ratLine('pretrip')) +
   '<section class="card" style="text-align:center" data-testid="countdown">' +
     '<div class="label">Trip starts in</div>' +
     '<div class="hero-days num">' + d + '</div>' +
@@ -1334,7 +1362,7 @@ function viewWrapup(){
     if (ds > biggestAmt){ biggestAmt = ds; biggestDay = d; }
   }
   return ratRow({ tier: rem >= 0 ? 'flush' : 'busted' },
-    ui.ratQuip || ('That’s a wrap on the ' + esc(s.name) + '-nancial District. I laughed, I cried, I ate the evidence.')) +
+    currentQuip() || ('That’s a wrap on the ' + esc(s.name) + '-nancial District. I laughed, I cried, I ate the evidence.')) +
   '<section class="card" style="text-align:center" data-testid="wrapup">' +
     '<div class="label">Final report card</div>' +
     '<div class="grade ' + (rem >= 0 ? 'good-ink' : 'danger-ink') + '">' + g.grade + '</div>' +
@@ -1430,10 +1458,13 @@ function viewStats(){
         '<span class="bd">' + esc(a.desc) + '</span></span></div>';
     }).join('') + '</div></section>';
 
+  var ph = phase(s, k);
   html += '<section class="card"><h2 class="sec">Report cards</h2>' +
     '<div class="chart-note" style="margin-top:0">A save-able card for the group chat. The rat poses.</div>' +
-    '<button class="btn" data-action="share-day" data-testid="share-day">Today’s report card</button>' +
-    '<button class="btn" data-action="share-trip" data-testid="share-trip">Trip report card (so far)</button>' +
+    (ph === 'during' ? '<button class="btn" data-action="share-day" data-testid="share-day">Today’s report card</button>' : '') +
+    (ph !== 'before'
+      ? '<button class="btn" data-action="share-trip" data-testid="share-trip">' + (ph === 'after' ? 'Final trip report card' : 'Trip report card (so far)') + '</button>'
+      : '<div class="center-empty">Cards unlock when the trip starts. The rat is warming up his pose.</div>') +
   '</section>';
   return html;
 }
@@ -1589,13 +1620,21 @@ function render(){
 }
 function renderSheet(){
   var zone = document.getElementById('sheet-zone');
-  if (!zone.querySelector('.panel')) ui.returnFocus = document.activeElement;  // only on first open
+  var firstOpen = !zone.querySelector('.panel');
+  if (firstOpen) ui.returnFocus = document.activeElement;
   zone.innerHTML = viewSheet();
   document.body.style.overflow = 'hidden';
-  // focus the dialog itself, NOT an input: auto-popping the keyboard is what
-  // made iOS zoom-jump on every sheet open
-  var panel = zone.querySelector('.panel');
-  if (panel) panel.focus();
+  if (firstOpen){
+    // focus the dialog itself, NOT an input: auto-popping the keyboard is
+    // what made iOS zoom-jump on every sheet open
+    var panel = zone.querySelector('.panel');
+    if (panel) panel.focus();
+  } else {
+    // validation-error re-render: the user was mid-typing — keep them in the
+    // field instead of dropping their keyboard
+    var amt = document.getElementById('f-amount');
+    if (amt){ amt.focus(); amt.setSelectionRange(amt.value.length, amt.value.length); }
+  }
 }
 
 /* ---- toast ---- */
@@ -1689,6 +1728,7 @@ var actions = {
   'rat-tap': function(){
     var quips = LINES.wisdom;
     ui.ratQuip = quips[Math.floor(Math.random() * quips.length)];
+    ui.ratQuipDay = nowKey();
     if (!ui.readOnly){
       state.meta.ratTaps = (state.meta.ratTaps || 0) + 1;
       if (state.meta.ratTaps >= 10 && !state.meta.crown){
@@ -1708,9 +1748,11 @@ var actions = {
     var el = document.getElementById('afford-amt');
     var out = document.getElementById('afford-out');
     if (!el || !out) return;
+    ui.affordRaw = el.value;
     var cents = parseCents(el.value);
     if (cents == null || cents <= 0){
-      out.innerHTML = 'The rat needs a number. Dreams are not a number.';
+      ui.affordOut = 'The rat needs a number. Dreams are not a number.';
+      out.innerHTML = ui.affordOut;
       return;
     }
     var s = state.settings, exps = state.expenses, k = nowKey();
@@ -1723,16 +1765,24 @@ var actions = {
     else if (newPace >= 6000) verdict = 'Doable — but that’s tomorrow’s brunch you’re eating.';
     else if (newPace >= 0) verdict = 'Ehh. The rat is squinting at you.';
     else verdict = 'Only if it comes with housing included.';
-    out.innerHTML = 'That’s ≈ <b>' + slices + ' dollar-ish slice' + (slices === 1 ? '' : 's') + '</b>. ' +
+    ui.affordOut = 'That’s ≈ <b>' + slices + ' dollar-ish slice' + (slices === 1 ? '' : 's') + '</b>. ' +
       'Today after buying: <b class="num">' + fmt$(after) + '</b> · new pace <b class="num">' + fmt$(newPace) + '/d</b>.<br>' +
       '<b>' + verdict + '</b>';
+    out.innerHTML = ui.affordOut;
   },
   'split': function(el){
     var amtEl = document.getElementById('f-amount');
-    if (!amtEl) return;
-    var cents = parseCents(amtEl.value);
-    if (cents == null || cents <= 0) return;
-    amtEl.value = String(Math.round(cents / +el.dataset.n) / 100);
+    var sh = ui.sheet;
+    if (!amtEl || !sh) return;
+    // divide the ORIGINAL typed amount, not the last result — repeated taps
+    // and divisor corrections must not compound (÷2 then ÷3 means ÷3, not ÷6)
+    if (sh.splitBase == null || amtEl.value !== sh.splitWritten){
+      var base = parseCents(amtEl.value);
+      if (base == null || base <= 0) return;
+      sh.splitBase = base;
+    }
+    amtEl.value = String(Math.round(sh.splitBase / +el.dataset.n) / 100);
+    sh.splitWritten = amtEl.value;
     readSheetForm();
   },
   'share-day': function(){ showShareCard('day'); },
@@ -1762,6 +1812,7 @@ var actions = {
     if (state.meta.sound !== false) playSound('chaching');
   },
   'dismiss-advisory': function(){
+    if (ui.readOnly){ state.meta.lastAlertDay = nowKey(); render(); return; }
     commit(function(st){ st.meta.lastAlertDay = nowKey(); });
   },
   'open-add': function(){ openAddSheet(); },
@@ -1919,6 +1970,11 @@ document.addEventListener('keydown', function(ev){
     actions['afford']();
     return;
   }
+  if (ev.key === 'Escape' && document.querySelector('#share-zone .share-back')){
+    ev.preventDefault();
+    actions['share-close']();
+    return;
+  }
   if (!ui.sheet) return;
   if (ev.key === 'Escape'){ ev.preventDefault(); closeSheet(); return; }
   if (ev.key !== 'Tab') return;
@@ -1927,9 +1983,14 @@ document.addEventListener('keydown', function(ev){
   var f = panel.querySelectorAll('button, input, textarea, select');
   if (!f.length) return;
   var first = f[0], last = f[f.length - 1];
-  if (!panel.contains(document.activeElement)){ ev.preventDefault(); first.focus(); }
+  if (document.activeElement === panel){ ev.preventDefault(); (ev.shiftKey ? last : first).focus(); }
+  else if (!panel.contains(document.activeElement)){ ev.preventDefault(); first.focus(); }
   else if (ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); }
   else if (!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); }
+});
+/* keep the afford input's value across full re-renders (rat taps, dismissals) */
+document.addEventListener('input', function(ev){
+  if (ev.target && ev.target.id === 'afford-amt') ui.affordRaw = ev.target.value;
 });
 /* keep "today" honest: re-render when the NY day flips or the tab wakes up */
 function dayTick(){
@@ -1945,6 +2006,7 @@ window.addEventListener('storage', function(ev){
     var p = JSON.parse(ev.newValue);
     if (p && p.settings && Array.isArray(p.expenses) &&
         typeof p.schemaVersion === 'number' && p.schemaVersion <= SCHEMA){
+      p.meta = metaDefaults(p.meta);
       state = p;
       if (!ui.sheet) render();
     }
@@ -2101,10 +2163,14 @@ function confirmImport(){
 /* =========================================================
    §J BOOT
    ========================================================= */
-/* make sure a HEAD-level viewport (with maximum-scale=1) exists: iOS only
-   suppresses its focus auto-zoom when the effective viewport declares it */
+/* make sure a HEAD-level viewport exists. maximum-scale=1 is added on iOS
+   ONLY: there it suppresses the input-focus auto-zoom while Safari (10+)
+   still allows user pinch; on Android it would genuinely block pinch-zoom */
 try {
-  var vpContent = 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover';
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var vpContent = 'width=device-width, initial-scale=1, viewport-fit=cover' +
+    (isIOS ? ', maximum-scale=1' : '');
   var vp = document.head && document.head.querySelector('meta[name="viewport"]');
   if (vp) vp.setAttribute('content', vpContent);
   else if (document.head){
