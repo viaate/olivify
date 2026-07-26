@@ -1,5 +1,5 @@
 <title>The Via-nancial District</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 
 <style>
 /* ============================================================
@@ -116,6 +116,7 @@ body{
 button{font:inherit; color:inherit; background:none; border:none; padding:0; cursor:pointer}
 button:active{transform:scale(.97)}
 input,select,textarea{font:inherit; color:var(--ink)}
+button,input,select,textarea,a{touch-action:manipulation}
 :focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:4px}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none !important; transition:none !important}
@@ -407,6 +408,50 @@ input,select,textarea{font:inherit; color:var(--ink)}
 .pace-svg text{font-family:'Helvetica Neue', Helvetica, Arial, sans-serif}
 .center-empty{text-align:center; color:var(--ink-3); padding:22px 8px; font-size:14px}
 h2.sec{font-size:16px; font-weight:800; margin:0 0 10px}
+#sheet-zone .panel:focus{outline:none}
+
+/* ---- Carlo is interactive now ---- */
+.rat-btn{flex:0 0 96px; padding:0}
+.rat-btn:active{transform:scale(.95)}
+.rat-svg{width:100%; height:auto; display:block}
+@keyframes squeakjump{0%{transform:none}30%{transform:translateY(-7px) rotate(-4deg)}60%{transform:translateY(1px) rotate(2deg)}100%{transform:none}}
+.rat-btn.bounce{animation:squeakjump .4s ease}
+
+/* ---- badge wall ---- */
+.badges{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.badge-card{display:flex; gap:8px; align-items:flex-start;
+  border:1px solid var(--card-edge); border-radius:10px; padding:9px 10px}
+.badge-card.locked{opacity:.45; filter:grayscale(1)}
+.badge-card .be{font-size:20px; line-height:1.2}
+.badge-card .bn{font-weight:700; font-size:12px; display:block}
+.badge-card .bd{font-size:11px; color:var(--ink-3)}
+
+/* ---- afford-it + split ---- */
+#afford-amt{border:1px solid var(--card-edge); background:var(--bg); border-radius:8px;
+  padding:10px 12px; font-size:16px; width:100%; min-height:48px}
+.afford-row{display:flex; gap:8px; align-items:stretch}
+.afford-row .btn{width:auto; margin-top:0; flex:0 0 auto}
+.split-row{display:flex; gap:8px; align-items:center; margin:-4px 0 12px}
+.split-row button{border:1px solid var(--card-edge); border-radius:8px; padding:6px 14px;
+  font-weight:700; font-size:14px; color:var(--ink-2); min-height:38px; background:var(--bg)}
+
+/* ---- MTA service advisory ---- */
+.advisory{background:var(--sign); color:var(--sign-ink); border-radius:8px;
+  border-left:6px solid var(--fun); padding:11px 13px; margin-bottom:12px;
+  font-size:13px; line-height:1.5}
+.advisory .ah{display:flex; align-items:center; font-size:10px; font-weight:800;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:3px}
+.advisory .ah button{margin-left:auto; color:var(--sign-ink); font-weight:800;
+  min-height:30px; padding:0 6px}
+
+/* ---- share overlay ---- */
+#share-zone .share-back{position:fixed; inset:0; z-index:80; background:rgba(6,7,8,.86);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; padding:20px}
+#share-zone .share-img{max-width:min(84vw,340px); max-height:62vh; border-radius:10px;
+  box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#share-zone .share-hint{color:#e8e9eb; font-size:13px; font-weight:600; text-align:center}
+#share-zone .btn{max-width:340px}
 </style>
 
 <noscript><p style="padding:20px">This app needs JavaScript the way NYC needs bagels: non-negotiably. Please turn it on.</p></noscript>
@@ -422,6 +467,7 @@ h2.sec{font-size:16px; font-weight:800; margin:0 0 10px}
 </nav>
 
 <div id="sheet-zone"></div>
+<div id="share-zone"></div>
 <div id="toast-zone" aria-live="polite"></div>
 
 <script>
@@ -517,7 +563,19 @@ function seedState(){
     },
     expenses: [],
     quickAdds: defaultQuickAdds(),
-    meta: { createdAt: Date.now(), lastSavedAt: null }
+    meta: metaDefaults({ createdAt: Date.now() })
+  };
+}
+function metaDefaults(m){
+  m = m && typeof m === 'object' ? m : {};
+  return {
+    createdAt: m.createdAt || Date.now(),
+    lastSavedAt: m.lastSavedAt || null,
+    sound: m.sound !== false,
+    ratTaps: Number.isInteger(m.ratTaps) ? m.ratTaps : 0,
+    crown: !!m.crown,
+    seenBadges: Array.isArray(m.seenBadges) ? m.seenBadges.filter(function(x){ return typeof x === 'string'; }).slice(0, 64) : [],
+    lastAlertDay: isKey(m.lastAlertDay) ? m.lastAlertDay : null
   };
 }
 
@@ -571,6 +629,7 @@ function load(){
     state = parsed;
   }
   if (!Array.isArray(state.quickAdds)) state.quickAdds = defaultQuickAdds();
+  if (!ui.readOnly) state.meta = metaDefaults(state.meta);
 }
 function save(){
   if (ui.readOnly) return false;
@@ -733,8 +792,94 @@ var LINES = {
   exported: "Backup made. Even your money has a fire escape now.",
   copied: "Backup copied to clipboard. Paste it somewhere safe (not the group chat).",
   ddBlocked: "Not enough dining dollars left for that week. They respawn on Mondays. Patience.",
-  imported: "Backup restored. It's like you never left. (You never left.)"
+  imported: "Backup restored. It's like you never left. (You never left.)",
+  wisdom: [
+    "The dollar slice is never actually a dollar anymore. We mourn together.",
+    "Free NYC things: the Staten Island Ferry, the High Line, judging people on the subway.",
+    "Lots of museums are 'pay what you wish' for NY students. Wish responsibly.",
+    "Never eat within 100 feet of Times Square. Financial AND culinary advice.",
+    "A bodega bacon-egg-and-cheese solves 80% of problems. The other 20% need two.",
+    "If the subway car is empty at rush hour, there's a reason. Same goes for deals.",
+    "Tip your bartender. Skip the $19 espresso martini. Balance.",
+    "Chinatown has the best food-per-dollar ratio on the island. I have receipts. Literally.",
+    "Dumpling crawl &gt; fancy brunch. Save $40, gain a personality.",
+    "It's pronounced HOW-ston Street. This tip is free. Most aren't.",
+    "Central Park: free. The vibes: free. The $14 lemonade: NOT free. Focus.",
+    "I once dragged a whole slice down a subway staircase. Follow your dreams."
+  ],
+  alertGood: [
+    "GOOD SERVICE on all budget lines. Suspicious. We're investigating.",
+    "All trains running on time and so is your money. Weird day. Enjoy it.",
+    "No delays reported. The rat did a little dance on the third rail."
+  ],
+  alertBad: [
+    "PLANNED WORK: your wallet is running local this weekend. Expect delays between Fun and Stuff.",
+    "DELAYS on the spending line after yesterday's, uh, enthusiasm. Seek alternate snacks.",
+    "SIGNAL PROBLEMS at Yesterday St. The overspend is under review by a rat in a safety vest."
+  ]
 };
+/* ---- achievements: pure predicates over state, nothing stored but "seen" ---- */
+var hourFmt = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', hour12: false });
+function nyHour(ts){ return +hourFmt.format(new Date(ts)) % 24; }
+function noteCount(st, re){ return st.expenses.filter(function(e){ return re.test(e.note || ''); }).length; }
+var ACHIEVEMENTS = [
+  { id:'slice5', emoji:'🍕', name:'Dollar Slice Scholar', desc:'Log 5 pizza purchases. That’s a thesis.',
+    test:function(st){ return noteCount(st, /pizza|slice|🍕/i) >= 5; } },
+  { id:'bodega', emoji:'🥯', name:'Bodega Baron', desc:'5 bodega runs. The cat nods at you now.',
+    test:function(st){ return noteCount(st, /bodega/i) >= 5; } },
+  { id:'museum', emoji:'🖼️', name:'Museum Rat', desc:'3 museum-ish visits. Culture acquired.',
+    test:function(st){ return noteCount(st, /museum|moma|gallery|\bmet\b/i) >= 3; } },
+  { id:'early', emoji:'🌅', name:'Early Bird', desc:'Log something before 9am. Who ARE you?',
+    test:function(st){ return st.expenses.some(function(e){ return nyHour(e.createdAt) < 9; }); } },
+  { id:'owl', emoji:'🦉', name:'Night Owl', desc:'Log something after 11pm. The city that never sleeps, and neither do you apparently.',
+    test:function(st){ return st.expenses.some(function(e){ var h = nyHour(e.createdAt); return h >= 23 || h < 4; }); } },
+  { id:'zero', emoji:'🧊', name:'The Untouchable', desc:'A full trip day at $0.00. Chilling. Literally.',
+    test:function(st, k){
+      if (!st.expenses.length || k <= st.settings.tripStart) return false;
+      var stop = clampKey(k, st.settings.tripStart, addDays(st.settings.tripEnd, 1));
+      for (var d = st.settings.tripStart; d < stop && d <= st.settings.tripEnd; d = addDays(d, 1)){
+        if (daySpent(st.expenses, d) === 0) return true;
+      }
+      return false;
+    } },
+  { id:'streak5', emoji:'🔥', name:'Streak Freak', desc:'5 days under budget in a row.',
+    test:function(st, k){ return underStreak(st.settings, st.expenses, k) >= 5; } },
+  { id:'wallst', emoji:'💼', name:'Wall Street Energy', desc:'Drop $100+ in one purchase. Bold. Terrifying.',
+    test:function(st){ return st.expenses.some(function(e){ return !e.diningDollars && e.amountCents >= 10000; }); } },
+  { id:'mealmvp', emoji:'🎓', name:'Meal Plan MVP', desc:'Use $25+ of one week’s dining dollars.',
+    test:function(st){
+      var weeks = Math.ceil(tripDays(st.settings) / 7);
+      for (var w = 0; w < weeks; w++){
+        if (st.settings.ddPerWeekCents - ddRemainingForWeek(st.settings, st.expenses, w) >= 2500) return true;
+      }
+      return false;
+    } },
+  { id:'six', emoji:'🎫', name:'Sixth Borough', desc:'6+ purchases in one day. Busy little legend.',
+    test:function(st){
+      var by = {};
+      return st.expenses.some(function(e){ by[e.date] = (by[e.date] || 0) + 1; return by[e.date] >= 6; });
+    } }
+];
+function unlockedBadges(){
+  var k = nowKey();
+  return ACHIEVEMENTS.filter(function(a){
+    try { return a.test(state, k); } catch(e){ return false; }
+  });
+}
+function checkBadges(){
+  if (ui.readOnly) return;
+  var seen = state.meta.seenBadges || [];
+  var fresh = unlockedBadges().filter(function(a){ return seen.indexOf(a.id) === -1; });
+  if (!fresh.length) return;
+  state.meta.seenBadges = seen.concat(fresh.map(function(a){ return a.id; }));
+  save();
+  fresh.forEach(function(a){
+    toast('Badge earned: ' + a.emoji + ' <b>' + esc(a.name) + '</b>');
+  });
+  playSound('fanfare');
+  confettiBurst();
+}
+
 function seededPick(arr, extra){
   var s = nowKey() + '|' + (extra || '');
   var h = 0;
@@ -752,9 +897,10 @@ function ratLine(tier){
 /* =========================================================
    §F SVG — the rat, the donut, the pace chart
    ========================================================= */
-function ratSVG(){
-  return '' +
-  '<svg class="rat-svg" viewBox="0 0 132 92" role="img" aria-label="Carlo the pizza rat">' +
+function ratSVG(o){
+  o = o || {};
+  var crowned = !!(state && state.meta && state.meta.crown);
+  var svg = '<svg class="rat-svg" viewBox="0 0 132 92" role="img" aria-label="Carlo the pizza rat">' +
     '<path d="M14 66 Q-6 58 6 42" fill="none" stroke="var(--rat-pink)" stroke-width="4" stroke-linecap="round"/>' +
     '<ellipse cx="52" cy="60" rx="36" ry="23" fill="var(--rat)"/>' +
     '<circle cx="88" cy="47" r="17" fill="var(--rat)"/>' +
@@ -764,12 +910,41 @@ function ratSVG(){
     '<circle cx="104.5" cy="50" r="2.6" fill="var(--rat-pink)"/>' +
     '<path d="M103 54 q-6 5 -12 4 M103 50 q-7 1 -13 -1" fill="none" stroke="var(--rat-dark)" stroke-width="1.2" stroke-linecap="round"/>' +
     '<ellipse cx="38" cy="82" rx="7" ry="4" fill="var(--rat-dark)"/>' +
-    '<ellipse cx="64" cy="83" rx="7" ry="4" fill="var(--rat-dark)"/>' +
-    '<path d="M96 58 L128 66 L100 80 Z" fill="var(--fun)"/>' +
-    '<path d="M96 58 L128 66" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>' +
-    '<circle cx="106" cy="67" r="2.3" fill="var(--danger)"/>' +
-    '<circle cx="112" cy="71" r="2.3" fill="var(--danger)"/>' +
-  '</svg>';
+    '<ellipse cx="64" cy="83" rx="7" ry="4" fill="var(--rat-dark)"/>';
+  // the slice: grayed with flies when today's overdrawn, swapped for a tiny
+  // violin when the whole trip is busted, hot and fresh otherwise
+  if (o.tier === 'busted'){
+    svg += '<ellipse cx="110" cy="70" rx="10" ry="6.5" fill="#8a5a2b"/>' +
+      '<rect x="116" y="56" width="3" height="13" fill="#5d3a17" transform="rotate(32 117 62)"/>' +
+      '<line x1="98" y1="78" x2="126" y2="60" stroke="#d9c9a3" stroke-width="1.6"/>';
+  } else if (o.tier === 'overdrawn'){
+    svg += '<path d="M96 58 L128 66 L100 80 Z" fill="var(--rat-dark)" opacity=".55"/>' +
+      '<circle cx="118" cy="52" r="1.6" fill="var(--ink-3)"/><circle cx="124" cy="57" r="1.6" fill="var(--ink-3)"/>';
+  } else {
+    svg += '<path d="M96 58 L128 66 L100 80 Z" fill="var(--fun)"/>' +
+      '<path d="M96 58 L128 66" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>' +
+      '<circle cx="106" cy="67" r="2.3" fill="var(--danger)"/>' +
+      '<circle cx="112" cy="71" r="2.3" fill="var(--danger)"/>';
+  }
+  if (o.tier === 'flush'){
+    svg += '<rect x="88" y="38" width="13" height="9" rx="3" fill="#15171a"/>' +
+      '<line x1="88" y1="42" x2="79" y2="39" stroke="#15171a" stroke-width="2.2" stroke-linecap="round"/>';
+  }
+  if (o.tier === 'wobbly'){
+    svg += '<path d="M74 38 q-3.5 5.5 0 8 q3.5 -2.5 0 -8" fill="#7ab6f0"/>';
+  }
+  if (crowned){
+    svg += '<path d="M80 26 l3 -9 4.5 6 4.5 -9 4.5 9 4.5 -6 3 9 z" fill="var(--accent)" stroke="var(--sign)" stroke-width="1"/>';
+  } else if ((o.streak || 0) >= 3 && (o.tier === 'flush' || o.tier === 'cruising')){
+    svg += '<path d="M96 11 L88 29 L104 27 Z" fill="var(--stuff)"/>' +
+      '<circle cx="96" cy="10" r="2.6" fill="var(--accent)"/>';
+  }
+  return svg + '</svg>';
+}
+function ratRow(opts, bubble){
+  return '<div class="rat-row">' +
+    '<button class="rat-btn" data-action="rat-tap" aria-label="Poke Carlo the rat">' + ratSVG(opts) + '</button>' +
+    '<div class="bubble" data-testid="rat-line">' + bubble + '</div></div>';
 }
 function donutSVG(parts){
   // parts: [{cat, cents}] in CAT_ORDER; 2px surface gaps between arcs
@@ -835,6 +1010,188 @@ function paceSVG(s, exps, k){
 }
 
 /* =========================================================
+   §F2 JUICE — synth sounds, confetti, canvas report cards
+   ========================================================= */
+var audioCtx = null;
+var SOUNDS = {
+  chaching: { wave:'triangle', gain:.18, notes:[[1318.5,0,.08],[1975.5,.08,.2]] },
+  squeak:   { wave:'sine',     gain:.15, notes:[[2300,0,.06],[2900,.05,.09]] },
+  fanfare:  { wave:'triangle', gain:.16, notes:[[523.3,0,.12],[659.3,.12,.12],[784,.24,.12],[1046.5,.36,.3]] },
+  trombone: { wave:'sawtooth', gain:.09, notes:[[233,0,.24],[220,.24,.24],[208,.48,.24],[185,.72,.55]] }
+};
+function playSound(name){
+  try {
+    if (state && state.meta && state.meta.sound === false) return;
+    var spec = SOUNDS[name];
+    if (!spec) return;
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    var t = audioCtx.currentTime;
+    spec.notes.forEach(function(n){
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = spec.wave;
+      o.frequency.setValueAtTime(n[0], t + n[1]);
+      g.gain.setValueAtTime(0.0001, t + n[1]);
+      g.gain.exponentialRampToValueAtTime(spec.gain, t + n[1] + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + n[2]);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t + n[1]); o.stop(t + n[1] + n[2] + 0.05);
+    });
+  } catch(e){}
+}
+
+function themeColor(name, fallback){
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  } catch(e){ return fallback; }
+}
+function confettiBurst(){
+  try {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var cv = document.getElementById('confetti-canvas');
+    if (!cv){
+      cv = document.createElement('canvas');
+      cv.id = 'confetti-canvas';
+      cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:95';
+      document.body.appendChild(cv);
+    }
+    cv.width = innerWidth; cv.height = innerHeight;
+    var ctx = cv.getContext('2d');
+    var colors = [themeColor('--accent','#f7c500'), themeColor('--eats','#12a355'),
+      themeColor('--fun','#e8641f'), themeColor('--stuff','#4b82e8'), '#fefefe'];
+    var parts = [];
+    for (var i = 0; i < 90; i++){
+      parts.push({ x: Math.random() * cv.width, y: -30 - Math.random() * cv.height * 0.3,
+        vx: (Math.random() - 0.5) * 2.4, vy: 2 + Math.random() * 3.5,
+        r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.25,
+        s: 7 + Math.random() * 6, c: colors[i % colors.length] });
+    }
+    var start = performance.now();
+    (function frame(now){
+      var dt = now - start;
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      if (dt > 1900) return;
+      parts.forEach(function(p){
+        p.x += p.vx; p.y += p.vy; p.vy += 0.075; p.r += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s * 0.62);
+        ctx.restore();
+      });
+      requestAnimationFrame(frame);
+    })(start);
+  } catch(e){}
+}
+
+/* ---- canvas report cards (1080x1920, sign-styled, story-sized) ---- */
+function tripGrade(){
+  var s = state.settings, exps = state.expenses;
+  var rem = totalRemaining(s, exps);
+  var frac = s.totalBudgetCents > 0 ? rem / s.totalBudgetCents : 0;
+  if (frac >= 0.1)  return { grade:'A+', quip:'Suspiciously Solvent. Did you even leave the dorm?', rem: rem };
+  if (frac >= 0)    return { grade:'A',  quip:'Landed the plane. On budget. In New York. Unheard of.', rem: rem };
+  if (frac >= -0.05) return { grade:'B+', quip:'Brokelyn-adjacent, but with excellent stories.', rem: rem };
+  if (frac >= -0.15) return { grade:'C',  quip:'Creative Accounting. The rat respects the hustle.', rem: rem };
+  return { grade:'F', quip:'Financial Performance Art. Tuition for the school of life.', rem: rem };
+}
+function drawCanvasRat(ctx, x, y, sc){
+  function E(cx, cy, rx, ry, fill){ ctx.beginPath(); ctx.ellipse(x+cx*sc, y+cy*sc, rx*sc, ry*sc, 0, 0, 6.29); ctx.fillStyle = fill; ctx.fill(); }
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x+14*sc, y+66*sc); ctx.quadraticCurveTo(x-6*sc, y+58*sc, x+6*sc, y+42*sc);
+  ctx.strokeStyle = '#e8a0a8'; ctx.lineWidth = 4*sc; ctx.stroke();
+  E(52, 60, 36, 23, '#9aa1ab');
+  E(88, 47, 17, 17, '#9aa1ab');
+  E(82, 30, 8, 8, '#9aa1ab'); E(82, 30, 4, 4, '#e8a0a8');
+  E(94, 43, 2.4, 2.4, '#0e0f11'); E(104.5, 50, 2.6, 2.6, '#e8a0a8');
+  E(38, 82, 7, 4, '#c6ccd4'); E(64, 83, 7, 4, '#c6ccd4');
+  ctx.beginPath(); ctx.moveTo(x+96*sc, y+58*sc); ctx.lineTo(x+128*sc, y+66*sc); ctx.lineTo(x+100*sc, y+80*sc);
+  ctx.closePath(); ctx.fillStyle = '#e8641f'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+96*sc, y+58*sc); ctx.lineTo(x+128*sc, y+66*sc);
+  ctx.strokeStyle = '#f7c500'; ctx.lineWidth = 4*sc; ctx.stroke();
+  E(106, 67, 2.3, 2.3, '#ff6f61'); E(112, 71, 2.3, 2.3, '#ff6f61');
+  if (state.meta.crown){
+    ctx.beginPath();
+    ctx.moveTo(x+80*sc, y+26*sc); ctx.lineTo(x+83*sc, y+17*sc); ctx.lineTo(x+87.5*sc, y+23*sc);
+    ctx.lineTo(x+92*sc, y+14*sc); ctx.lineTo(x+96.5*sc, y+23*sc); ctx.lineTo(x+101*sc, y+17*sc); ctx.lineTo(x+104*sc, y+26*sc);
+    ctx.closePath(); ctx.fillStyle = '#f7c500'; ctx.fill();
+  }
+}
+function cardFont(px, weight){ return (weight || 800) + ' ' + px + 'px "Helvetica Neue", Helvetica, Arial, sans-serif'; }
+function makeCardCanvas(kind){
+  var W = 1080, H = 1920;
+  var c = document.createElement('canvas'); c.width = W; c.height = H;
+  var ctx = c.getContext('2d');
+  var s = state.settings, exps = state.expenses, k = nowKey();
+  var YEL = '#f7c500', INKW = '#fefefe', MUT = '#9aa1ab';
+  ctx.fillStyle = '#0b0c0e'; ctx.fillRect(0, 0, W, H);
+  // station sign header
+  ctx.fillStyle = '#000'; ctx.fillRect(70, 90, W-140, 240);
+  ctx.fillStyle = YEL; ctx.fillRect(70, 330, W-140, 14);
+  ctx.fillStyle = INKW; ctx.font = cardFont(64);
+  ctx.fillText('THE ' + (s.name || 'VIA').toUpperCase() + '-NANCIAL', 110, 195);
+  ctx.fillText('DISTRICT', 110, 275);
+  [['#12a355','E'],['#e8641f','F'],['#4b82e8','S']].forEach(function(b, i){
+    ctx.beginPath(); ctx.arc(830 + i*62, 250, 26, 0, 6.29); ctx.fillStyle = b[0]; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = cardFont(28); ctx.fillText(b[1], 830 + i*62 - 10, 260);
+  });
+  function label(t, y){ ctx.fillStyle = MUT; ctx.font = cardFont(34, 700); ctx.fillText(t.toUpperCase(), 110, y); }
+  function big(t, y, color, px){ ctx.fillStyle = color || INKW; ctx.font = cardFont(px || 150); ctx.fillText(t, 110, y); }
+  function line(t, y, color, px, weight){ ctx.fillStyle = color || INKW; ctx.font = cardFont(px || 42, weight || 700); ctx.fillText(t, 110, y); }
+  if (kind === 'day'){
+    var n = dayNum(s, k), allow = allowForDay(s, n), spent = daySpent(exps, k);
+    var under = spent <= allow;
+    label('Day ' + n + ' of ' + tripDays(s) + ' · ' + fmtDay(k), 450);
+    label('The damage', 560);
+    big(fmt$(spent), 700, under ? INKW : '#ff6f61', 170);
+    line('of a ' + fmt$(allow) + ' daily allowance', 770, MUT, 40);
+    line(under ? 'UNDER BUDGET. The rat nods slowly.' : 'OVER BUDGET. The rat is making a note.', 880, under ? '#3dbd77' : '#ff6f61', 44);
+    var todays = exps.filter(function(e){ return e.date === k && !e.diningDollars; })
+      .sort(function(a,b){ return b.amountCents - a.amountCents; });
+    if (todays[0]) line('Biggest hit: ' + (todays[0].note || CATS[todays[0].category].full) + ' · ' + fmt$(todays[0].amountCents), 970, INKW, 40);
+    line('Streak: ' + underStreak(s, exps, k) + ' day(s) under budget', 1050, MUT, 40);
+    line('Left overall: ' + fmt$(totalRemaining(s, exps)), 1130, INKW, 44);
+  } else {
+    var g = tripGrade();
+    var spentAll = totalSpent(exps);
+    label('Final report card · ' + fmtDay(s.tripStart) + ' – ' + fmtDay(s.tripEnd), 450);
+    ctx.save(); ctx.translate(190, 720); ctx.rotate(-0.07);
+    ctx.strokeStyle = g.rem >= 0 ? '#3dbd77' : '#ff6f61'; ctx.lineWidth = 10;
+    ctx.strokeRect(-80, -140, 340, 220);
+    ctx.fillStyle = g.rem >= 0 ? '#3dbd77' : '#ff6f61'; ctx.font = cardFont(170);
+    ctx.fillText(g.grade, -40, 40);
+    ctx.restore();
+    line(g.quip, 900, INKW, 42);
+    line('Spent: ' + fmt$(spentAll) + '  ·  ' + (g.rem >= 0 ? 'Left: ' : 'Over by: ') + fmt$(Math.abs(g.rem)), 1000, INKW, 46);
+    CAT_ORDER.forEach(function(cat, i){
+      var y = 1100 + i * 74;
+      ctx.beginPath(); ctx.arc(135, y - 14, 22, 0, 6.29);
+      ctx.fillStyle = themeColor('--' + cat, '#888'); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = cardFont(24); ctx.fillText(CATS[cat].letter, 127, y - 5);
+      ctx.fillStyle = INKW; ctx.font = cardFont(40, 700);
+      ctx.fillText(CATS[cat].label + ' — ' + fmt$(catSpent(exps, cat)), 180, y);
+    });
+  }
+  drawCanvasRat(ctx, 620, 1380, 3);
+  ctx.fillStyle = MUT; ctx.font = cardFont(30, 700);
+  ctx.setLineDash([14, 14]); ctx.strokeStyle = MUT; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(110, 1760); ctx.lineTo(W-110, 1760); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText('* thank you for spending. no refunds. — mgmt (a rat)', 110, 1830);
+  return c;
+}
+function showShareCard(kind){
+  var canvas = makeCardCanvas(kind);
+  ui.shareCanvas = canvas;
+  var url = canvas.toDataURL('image/png');
+  var canDl = !!(window.claude && window.claude.downloads && window.claude.downloads.save);
+  document.getElementById('share-zone').innerHTML =
+    '<div class="share-back" data-testid="share-overlay">' +
+    '<img class="share-img" data-testid="share-img" alt="Report card" src="' + url + '">' +
+    '<div class="share-hint">Long-press the card → “Add to Photos” to save it</div>' +
+    (canDl ? '<button class="btn primary" data-action="share-download" data-testid="share-download">Download PNG</button>' : '') +
+    '<button class="btn" data-action="share-close" data-testid="share-close">Done</button></div>';
+}
+
+/* =========================================================
    §G VIEWS — template functions; math lives in §D, not here
    ========================================================= */
 function esc(s){
@@ -874,6 +1231,18 @@ function viewBanners(){
   return html;
 }
 
+function advisoryHTML(){
+  var s = state.settings, k = nowKey();
+  if (phase(s, k) !== 'during' || state.meta.lastAlertDay === k) return '';
+  var y = addDays(k, -1);
+  var goodDay = y < s.tripStart || daySpent(state.expenses, y) <= allowForDay(s, dayNum(s, y));
+  var lines = goodDay ? LINES.alertGood : LINES.alertBad;
+  return '<div class="advisory" data-testid="advisory"><span class="ah">Service advisory · MTA*' +
+    '<button data-action="dismiss-advisory" data-testid="dismiss-advisory" aria-label="Dismiss advisory">✕</button></span>' +
+    seededPick(lines, 'alert') +
+    '<span style="display:block; font-size:10px; color:rgba(254,254,254,.5); margin-top:4px">*Money Tracking Authority. Not affiliated with trains.</span></div>';
+}
+
 function expRow(e, s){
   var offRange = e.date < s.tripStart || e.date > s.tripEnd;
   var badge = e.diningDollars ? '<span class="badge">🎓 dining $</span>' : '';
@@ -903,8 +1272,8 @@ function viewToday(){
     .sort(function(a,b){ return b.createdAt - a.createdAt; });
   var pctOfToday = allow > 0 ? Math.min(spent / allow, 1) : 1;
 
-  var html = '<div class="rat-row">' + ratSVG() +
-    '<div class="bubble" data-testid="rat-line">' + ratLine(tier) + '</div></div>';
+  var html = advisoryHTML();
+  html += ratRow({ tier: tier, streak: underStreak(s, exps, k) }, ui.ratQuip || ratLine(tier));
 
   html += '<section class="card">' +
     '<div class="label">You can spend today</div>' +
@@ -926,14 +1295,21 @@ function viewToday(){
     html += '<div class="exp-list">' + todays.map(function(e){ return expRow(e, s); }).join('') + '</div>';
   }
   html += '</section>';
+
+  html += '<section class="card"><h2 class="sec">Can I afford it?</h2>' +
+    '<div class="afford-row">' +
+      '<input type="text" inputmode="decimal" id="afford-amt" data-testid="afford-input" placeholder="e.g. 89 for that Broadway seat" aria-label="Price to check">' +
+      '<button class="btn" data-action="afford" data-testid="afford-btn">Ask the rat</button>' +
+    '</div>' +
+    '<div class="preview-line" id="afford-out" data-testid="afford-out"></div>' +
+  '</section>';
   return html;
 }
 
 function viewCountdown(){
   var s = state.settings, k = nowKey();
   var d = diffDays(k, s.tripStart);
-  return '<div class="rat-row">' + ratSVG() +
-    '<div class="bubble" data-testid="rat-line">' + ratLine('pretrip') + '</div></div>' +
+  return ratRow({ tier: 'pretrip' }, ui.ratQuip || ratLine('pretrip')) +
   '<section class="card" style="text-align:center" data-testid="countdown">' +
     '<div class="label">Trip starts in</div>' +
     '<div class="hero-days num">' + d + '</div>' +
@@ -950,31 +1326,26 @@ function viewCountdown(){
 
 function viewWrapup(){
   var s = state.settings, exps = state.expenses;
-  var spent = totalSpent(exps), rem = totalRemaining(s, exps);
-  var frac = s.totalBudgetCents > 0 ? rem / s.totalBudgetCents : 0;
-  var grade, quip;
-  if (frac >= 0.1){ grade = 'A+'; quip = 'Suspiciously Solvent. Did you even leave the dorm?'; }
-  else if (frac >= 0){ grade = 'A'; quip = 'Landed the plane. On budget. In New York. Unheard of.'; }
-  else if (frac >= -0.05){ grade = 'B+'; quip = 'Brokelyn-adjacent, but with excellent stories.'; }
-  else if (frac >= -0.15){ grade = 'C'; quip = 'Creative Accounting. The rat respects the hustle.'; }
-  else { grade = 'F'; quip = 'Financial Performance Art. Tuition for the school of life.'; }
+  var spent = totalSpent(exps);
+  var g = tripGrade(), rem = g.rem;
   var biggestDay = null, biggestAmt = -1;
   for (var d = s.tripStart; d <= s.tripEnd; d = addDays(d, 1)){
     var ds = daySpent(exps, d);
     if (ds > biggestAmt){ biggestAmt = ds; biggestDay = d; }
   }
-  return '<div class="rat-row">' + ratSVG() +
-    '<div class="bubble" data-testid="rat-line">That’s a wrap on the ' + esc(s.name) + '-nancial District. I laughed, I cried, I ate the evidence.</div></div>' +
+  return ratRow({ tier: rem >= 0 ? 'flush' : 'busted' },
+    ui.ratQuip || ('That’s a wrap on the ' + esc(s.name) + '-nancial District. I laughed, I cried, I ate the evidence.')) +
   '<section class="card" style="text-align:center" data-testid="wrapup">' +
     '<div class="label">Final report card</div>' +
-    '<div class="grade ' + (rem >= 0 ? 'good-ink' : 'danger-ink') + '">' + grade + '</div>' +
-    '<div class="muted" style="font-weight:600">' + quip + '</div>' +
+    '<div class="grade ' + (rem >= 0 ? 'good-ink' : 'danger-ink') + '">' + g.grade + '</div>' +
+    '<div class="muted" style="font-weight:600">' + g.quip + '</div>' +
     '<div class="stat-row" style="text-align:left">' +
       '<div class="stat"><div class="label">Spent</div><div class="v num">' + fmt$(spent) + '</div></div>' +
       '<div class="stat"><div class="label">' + (rem >= 0 ? 'Left over' : 'Over by') + '</div><div class="v num' + (rem < 0 ? ' over' : '') + '">' + fmt$(Math.abs(rem)) + '</div></div>' +
       '<div class="stat"><div class="label">Biggest day</div><div class="v num">' + (biggestDay ? fmt$(biggestAmt) : '—') + '</div></div>' +
     '</div>' +
-    '<button class="btn primary" data-action="export-json" data-testid="export-json">Save the evidence (backup)</button>' +
+    '<button class="btn primary" data-action="share-trip" data-testid="share-trip">Make the shareable report card</button>' +
+    '<button class="btn" data-action="export-json" data-testid="export-json">Save the evidence (backup)</button>' +
   '</section>' +
   '<section class="card">' + viewStatsInner() + '</section>';
 }
@@ -1049,6 +1420,21 @@ function viewStats(){
     '<div class="funstat"><span class="k">🍕 Pizza index</span><span class="v num">' + pizza + '</span></div>' +
     '<div class="funstat"><span class="k">Days under budget streak</span><span class="v num">' + streak + '</span></div>' +
   '</section>';
+
+  var gotIds = unlockedBadges().map(function(a){ return a.id; });
+  html += '<section class="card"><h2 class="sec">Badge wall <span class="faint" style="font-weight:600">' + gotIds.length + '/' + ACHIEVEMENTS.length + '</span></h2>' +
+    '<div class="badges">' + ACHIEVEMENTS.map(function(a){
+      var got = gotIds.indexOf(a.id) >= 0;
+      return '<div class="badge-card' + (got ? '' : ' locked') + '" data-testid="badge-' + a.id + '" data-got="' + got + '">' +
+        '<span class="be">' + a.emoji + '</span><span><span class="bn">' + esc(a.name) + '</span>' +
+        '<span class="bd">' + esc(a.desc) + '</span></span></div>';
+    }).join('') + '</div></section>';
+
+  html += '<section class="card"><h2 class="sec">Report cards</h2>' +
+    '<div class="chart-note" style="margin-top:0">A save-able card for the group chat. The rat poses.</div>' +
+    '<button class="btn" data-action="share-day" data-testid="share-day">Today’s report card</button>' +
+    '<button class="btn" data-action="share-trip" data-testid="share-trip">Trip report card (so far)</button>' +
+  '</section>';
   return html;
 }
 
@@ -1083,6 +1469,11 @@ function viewSettings(){
     '<div id="import-zone">' + (ui.importPreview ? importPreviewHTML() : '') + '</div>' +
   '</section>';
 
+  html += '<section class="card"><h2 class="sec">Noise</h2>' +
+    '<button class="dd-toggle" data-action="toggle-sound" data-testid="sound-toggle" aria-pressed="' + (state.meta.sound !== false) + '" style="margin-bottom:0">' +
+    'Cash-register sounds &amp; rat squeaks<span class="knob"></span></button>' +
+  '</section>';
+
   html += '<section class="card"><h2 class="sec">The board of directors</h2>' +
     '<div class="muted" style="font-size:14px">The ' + esc(s.name) + '-nancial District v1. Built for ' + esc(s.name) + ', one (1) legendary New-Yorker-in-training — she runs this town now.<br><br>' +
     'CFO: Carlo “Slice” Ratigan (Chief Fiscal Rodent). Salary: one (1) slice, non-negotiable. No pigeons were consulted.</div>' +
@@ -1110,7 +1501,7 @@ function viewSheet(){
               sh.mode === 'edit' ? 'Fix the record' :
               sh.mode === 'qa-add' ? 'New quick button' : 'Edit quick button';
   var html = '<div class="backdrop" data-action="sheet-cancel"></div>' +
-    '<div class="panel" role="dialog" aria-modal="true" aria-label="' + title + '" data-testid="sheet">' +
+    '<div class="panel" role="dialog" aria-modal="true" tabindex="-1" aria-label="' + title + '" data-testid="sheet">' +
     '<div class="grab"></div>' +
     '<div class="sheet-h"><h2>' + title + '</h2><button class="x" data-action="sheet-cancel">Nevermind</button></div>';
 
@@ -1130,6 +1521,13 @@ function viewSheet(){
   var amtVal = sh.amountRaw ? sh.amountRaw : (sh.amountCents != null ? String(sh.amountCents/100) : '');
   html += '<div class="amount-wrap"><span class="cur">$</span>' +
     '<input type="text" inputmode="decimal" id="f-amount" data-testid="amount-input" placeholder="0.00" value="' + esc(amtVal) + '" aria-label="Amount in dollars"></div>';
+  if (!isQA){
+    html += '<div class="split-row" role="group" aria-label="Split the bill">' +
+      [2, 3, 4].map(function(n){
+        return '<button data-action="split" data-n="' + n + '" data-testid="split-' + n + '">÷' + n + '</button>';
+      }).join('') +
+      '<span class="faint" style="font-size:12px">splitting the bill? tap one</span></div>';
+  }
   html += '<div class="seg" role="group" aria-label="Category">' + CAT_ORDER.map(function(c){
     return '<button data-action="pick-cat" data-cat="' + c + '" data-testid="category-' + c + '" aria-pressed="' + (sh.category === c) + '">' +
       catDot(c, true) + CATS[c].label + '</button>';
@@ -1194,8 +1592,10 @@ function renderSheet(){
   if (!zone.querySelector('.panel')) ui.returnFocus = document.activeElement;  // only on first open
   zone.innerHTML = viewSheet();
   document.body.style.overflow = 'hidden';
-  var amt = document.getElementById('f-amount');
-  if (amt) amt.focus();
+  // focus the dialog itself, NOT an input: auto-popping the keyboard is what
+  // made iOS zoom-jump on every sheet open
+  var panel = zone.querySelector('.panel');
+  if (panel) panel.focus();
 }
 
 /* ---- toast ---- */
@@ -1276,10 +1676,94 @@ function saveExpenseFromSheet(){
   }
   closeSheet();
   toast(seededPick(LINES.saved, 'sv' + state.expenses.length));
+  playSound(!sh.diningDollars && availableToday(state.settings, state.expenses, nowKey()) < 0 ? 'trombone' : 'chaching');
+  checkBadges();
 }
 
 var actions = {
-  'tab': function(el){ ui.tab = el.dataset.tab; render(); window.scrollTo(0,0); },
+  'tab': function(el){
+    ui.tab = el.dataset.tab; ui.ratQuip = null;
+    render(); window.scrollTo(0,0);
+    maybeCelebrateWrapup();
+  },
+  'rat-tap': function(){
+    var quips = LINES.wisdom;
+    ui.ratQuip = quips[Math.floor(Math.random() * quips.length)];
+    if (!ui.readOnly){
+      state.meta.ratTaps = (state.meta.ratTaps || 0) + 1;
+      if (state.meta.ratTaps >= 10 && !state.meta.crown){
+        state.meta.crown = true;
+        ui.ratQuip = 'A crown?! For ME? …I mean. Yes. Obviously. Bow.';
+        playSound('fanfare');
+        confettiBurst();
+      }
+      save();
+    }
+    playSound('squeak');
+    render();
+    var btn = document.querySelector('.rat-btn');
+    if (btn) btn.classList.add('bounce');
+  },
+  'afford': function(){
+    var el = document.getElementById('afford-amt');
+    var out = document.getElementById('afford-out');
+    if (!el || !out) return;
+    var cents = parseCents(el.value);
+    if (cents == null || cents <= 0){
+      out.innerHTML = 'The rat needs a number. Dreams are not a number.';
+      return;
+    }
+    var s = state.settings, exps = state.expenses, k = nowKey();
+    var after = availableToday(s, exps, k) - cents;
+    var d = daysRemaining(s, k);
+    var newPace = d > 0 ? Math.floor((totalRemaining(s, exps) - cents) / d) : 0;
+    var slices = Math.max(1, Math.round(cents / 400));
+    var verdict;
+    if (after >= 0) verdict = 'Buy it. You’re fine. Annoyingly fine.';
+    else if (newPace >= 6000) verdict = 'Doable — but that’s tomorrow’s brunch you’re eating.';
+    else if (newPace >= 0) verdict = 'Ehh. The rat is squinting at you.';
+    else verdict = 'Only if it comes with housing included.';
+    out.innerHTML = 'That’s ≈ <b>' + slices + ' dollar-ish slice' + (slices === 1 ? '' : 's') + '</b>. ' +
+      'Today after buying: <b class="num">' + fmt$(after) + '</b> · new pace <b class="num">' + fmt$(newPace) + '/d</b>.<br>' +
+      '<b>' + verdict + '</b>';
+  },
+  'split': function(el){
+    var amtEl = document.getElementById('f-amount');
+    if (!amtEl) return;
+    var cents = parseCents(amtEl.value);
+    if (cents == null || cents <= 0) return;
+    amtEl.value = String(Math.round(cents / +el.dataset.n) / 100);
+    readSheetForm();
+  },
+  'share-day': function(){ showShareCard('day'); },
+  'share-trip': function(){ showShareCard('trip'); },
+  'share-download': function(){
+    var canvas = ui.shareCanvas;
+    if (!canvas || !(window.claude && window.claude.downloads)) return;
+    canvas.toBlob(function(blob){
+      if (!blob) return;
+      window.claude.downloads.save({ filename: 'vianancial-card-' + nowKey() + '.png', data: blob })
+        .then(function(){ toast('Saved. Post it. Tag the rat.'); })
+        .catch(function(err){
+          if (err && err.code === 'declined') return;
+          toast('Download didn’t go through — long-press the image instead.');
+        });
+    }, 'image/png');
+  },
+  'share-close': function(){
+    ui.shareCanvas = null;
+    document.getElementById('share-zone').innerHTML = '';
+  },
+  'toggle-sound': function(el){
+    if (ui.readOnly) return;
+    state.meta.sound = state.meta.sound === false;
+    save();
+    el.setAttribute('aria-pressed', String(state.meta.sound !== false));
+    if (state.meta.sound !== false) playSound('chaching');
+  },
+  'dismiss-advisory': function(){
+    commit(function(st){ st.meta.lastAlertDay = nowKey(); });
+  },
   'open-add': function(){ openAddSheet(); },
   'qa-tap': function(el){
     var q = state.quickAdds.find(function(x){ return x.id === el.dataset.id; });
@@ -1422,8 +1906,19 @@ document.addEventListener('click', function(ev){
   var fn = actions[el.dataset.action];
   if (fn) fn(el);
 });
+function maybeCelebrateWrapup(){
+  if (ui.tab === 'today' && phase(state.settings, nowKey()) === 'after' && !ui.wrapConfettied){
+    ui.wrapConfettied = true;
+    confettiBurst();
+  }
+}
 /* sheet keyboard support: Escape closes, Tab stays inside the dialog */
 document.addEventListener('keydown', function(ev){
+  if (ev.key === 'Enter' && ev.target && ev.target.id === 'afford-amt'){
+    ev.preventDefault();
+    actions['afford']();
+    return;
+  }
   if (!ui.sheet) return;
   if (ev.key === 'Escape'){ ev.preventDefault(); closeSheet(); return; }
   if (ev.key !== 'Tab') return;
@@ -1570,7 +2065,7 @@ function validateImport(raw){
         label: q.label.trim().slice(0,24), amountCents: q.amountCents, category: q.category,
         note: String(q.note || q.label).slice(0,80) };
     }) : defaultQuickAdds(),
-    meta: { createdAt: (v.meta && v.meta.createdAt) || Date.now(), lastSavedAt: null }
+    meta: metaDefaults(v.meta)
   };
   return { clean: clean };
 }
@@ -1606,8 +2101,22 @@ function confirmImport(){
 /* =========================================================
    §J BOOT
    ========================================================= */
+/* make sure a HEAD-level viewport (with maximum-scale=1) exists: iOS only
+   suppresses its focus auto-zoom when the effective viewport declares it */
+try {
+  var vpContent = 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover';
+  var vp = document.head && document.head.querySelector('meta[name="viewport"]');
+  if (vp) vp.setAttribute('content', vpContent);
+  else if (document.head){
+    vp = document.createElement('meta');
+    vp.name = 'viewport'; vp.content = vpContent;
+    document.head.appendChild(vp);
+  }
+} catch(e){}
+
 load();
 render();
+maybeCelebrateWrapup();
 
 window.__test = {
   setNow: function(k){ ui.debugNow = k; render(); },

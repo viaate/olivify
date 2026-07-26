@@ -380,6 +380,106 @@ test('21. v1 data on the phone migrates to v2 with a .bak of the original', asyn
   await close(p);
 });
 
+test('22. zoom guards: no auto-focused input, 16px+ fields, capped viewport', async () => {
+  const p = await page({ seed: baseState(), now: '2026-07-28' });
+  await p.click('[data-testid=fab]');
+  const active = await p.evaluate(() => document.activeElement.className);
+  assert.match(active, /panel/, 'sheet focuses the dialog, not an input (no keyboard pop)');
+  const small = await p.evaluate(() =>
+    [...document.querySelectorAll('input[type=text], textarea')]
+      .map(el => ({ id: el.id, size: parseFloat(getComputedStyle(el).fontSize) }))
+      .filter(x => x.size < 16));
+  assert.deepEqual(small, [], 'no text input under 16px (iOS zoom trigger)');
+  const vp = await p.evaluate(() => document.head.querySelector('meta[name=viewport]').content);
+  assert.match(vp, /maximum-scale=1/, 'head viewport suppresses focus auto-zoom');
+  await close(p);
+});
+
+test('23. afford-it calculator forecasts exact damage', async () => {
+  const p = await page({ seed: SEED4, now: '2026-07-30' });
+  await p.fill('[data-testid=afford-input]', '100');
+  await p.click('[data-testid=afford-btn]');
+  const out = await text(p, '[data-testid=afford-out]');
+  assert.match(out, /\$164\.29/, 'today-after-buying = availableToday − $100');
+  assert.match(out, new RegExp((Math.floor(145000 / 11) / 100).toFixed(2).replace('.', '\\.')), 'new pace = floor((remaining−100)/11)');
+  await close(p);
+});
+
+test('24. split-by-N divides the typed amount', async () => {
+  const p = await page({ seed: baseState(), now: '2026-07-28' });
+  await p.click('[data-testid=fab]');
+  await p.fill('[data-testid=amount-input]', '84');
+  await p.click('[data-testid=split-4]');
+  assert.equal(await p.inputValue('[data-testid=amount-input]'), '21');
+  await close(p);
+});
+
+test('25. badges: 5th pizza unlocks Dollar Slice Scholar with a toast', async () => {
+  const seed = baseState({ expenses: [
+    exp('p1', '2026-07-27', 400, 'eats', 'Pizza slice'),
+    exp('p2', '2026-07-27', 400, 'eats', 'Pizza slice'),
+    exp('p3', '2026-07-28', 400, 'eats', 'Pizza slice'),
+    exp('p4', '2026-07-28', 400, 'eats', 'Pizza slice'),
+  ] });
+  const p = await page({ seed, now: '2026-07-28' });
+  await p.click('[data-testid=tab-stats]');
+  assert.equal(await p.locator('[data-testid=badge-slice5]').getAttribute('data-got'), 'false', 'locked at 4 pizzas');
+  await p.click('[data-testid=tab-today]');
+  await p.click('[data-testid=fab]');
+  await p.click('[data-testid=qa-tile]:has-text("Slice")');
+  await p.click('[data-testid=save-expense]');
+  assert.match(await text(p, '#toast-zone'), /Dollar Slice Scholar/, 'unlock toast fired');
+  await p.click('[data-testid=tab-stats]');
+  assert.equal(await p.locator('[data-testid=badge-slice5]').getAttribute('data-got'), 'true', 'badge lit');
+  const stored = await p.evaluate(k => JSON.parse(localStorage.getItem(k)), KEY);
+  assert.ok(stored.meta.seenBadges.includes('slice5'), 'unlock persisted');
+  await close(p);
+});
+
+test('26. report card renders a real PNG in the share overlay', async () => {
+  const p = await page({ seed: SEED4, now: '2026-07-30' });
+  await p.click('[data-testid=tab-stats]');
+  await p.click('[data-testid=share-day]');
+  const src = await p.locator('[data-testid=share-img]').getAttribute('src');
+  assert.ok(src.startsWith('data:image/png'), 'PNG data URL');
+  assert.ok(src.length > 10000, 'non-trivial image (' + src.length + ' chars)');
+  await p.click('[data-testid=share-close]');
+  assert.equal(await p.locator('[data-testid=share-overlay]').count(), 0, 'overlay closes');
+  await close(p);
+});
+
+test('27. MTA service advisory shows once per day, dismiss persists', async () => {
+  const seed = baseState();
+  seed.meta.lastAlertDay = '2026-07-29';
+  const p = await page({ seed, now: '2026-07-30' });
+  assert.ok(await p.locator('[data-testid=advisory]').isVisible(), 'advisory on a fresh day');
+  await p.click('[data-testid=dismiss-advisory]');
+  assert.equal(await p.locator('[data-testid=advisory]').count(), 0, 'gone after dismiss');
+  const stored = await p.evaluate(k => JSON.parse(localStorage.getItem(k)), KEY);
+  assert.equal(stored.meta.lastAlertDay, '2026-07-30', 'dismissal persisted');
+  await p.evaluate(k => window.__test.setNow(k), '2026-07-30');
+  assert.equal(await p.locator('[data-testid=advisory]').count(), 0, 'stays gone on re-render');
+  await close(p);
+});
+
+test('28. sound toggle persists; 10 rat taps earn the crown', async () => {
+  const p = await page({ seed: baseState(), now: '2026-07-28' });
+  await p.click('[data-testid=tab-settings]');
+  assert.equal(await p.locator('[data-testid=sound-toggle]').getAttribute('aria-pressed'), 'true');
+  await p.click('[data-testid=sound-toggle]');
+  await p.reload();
+  await p.evaluate(k => window.__test.setNow(k), '2026-07-28');
+  await p.click('[data-testid=tab-settings]');
+  assert.equal(await p.locator('[data-testid=sound-toggle]').getAttribute('aria-pressed'), 'false', 'mute survived reload');
+  await p.click('[data-testid=tab-today]');
+  for (let i = 0; i < 10; i++) await p.click('.rat-btn');
+  const stored = await p.evaluate(k => JSON.parse(localStorage.getItem(k)), KEY);
+  assert.equal(stored.meta.ratTaps, 10);
+  assert.equal(stored.meta.crown, true, 'crowned');
+  assert.match(await text(p, '[data-testid=rat-line]'), /crown/i, 'coronation quip');
+  await close(p);
+});
+
 (async () => {
   browser = await launch();
   server = await serve();

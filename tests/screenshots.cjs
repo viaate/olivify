@@ -66,6 +66,14 @@ const DEMO = baseState({
   await shot('08-settings', { go: p => p.click('[data-testid=tab-settings]') });
   await shot('09-countdown', { now: '2026-07-25', seed: baseState() });
   await shot('10-wrapup', { now: '2026-08-10' });
+  await shot('11-badges', { go: async p => {
+    await p.click('[data-testid=tab-stats]');
+    await p.evaluate(() => document.querySelector('.badges').scrollIntoView());
+  } });
+  await shot('12-share-card', { go: async p => {
+    await p.click('[data-testid=tab-stats]');
+    await p.click('[data-testid=share-day]');
+  } });
 
   await browser.close();
   server.close();

@@ -28,6 +28,26 @@ screen.
 - Trip dates and totals are **hardcoded by design** (per Via) — Settings shows
   them read-only; only quick-add buttons and backups are editable.
 
+## The fun layer
+
+- **Carlo reacts**: tap him for NYC wisdom (10 taps earn him a permanent crown);
+  his accessories track budget health — sunglasses when flush, a sweat drop when
+  wobbly, a grayed slice when today's overdrawn, a tiny violin when the trip is
+  busted, a party hat on 3+ day under-budget streaks.
+- **Achievements**: ten NYC badges (Dollar Slice Scholar, Bodega Baron, Museum
+  Rat, Early Bird, Night Owl, The Untouchable, Streak Freak, Wall Street Energy,
+  Meal Plan MVP, Sixth Borough) computed live from the expense log; unlocks
+  toast + confetti + fanfare, shown on the Stats badge wall.
+- **Can I afford it?** on Today: type a price, get slice-equivalents, what's
+  left of today after buying, the new required pace, and a verdict.
+- **Split-by-N** chips (÷2 ÷3 ÷4) under the amount field for group bills.
+- **Report cards**: canvas-drawn 1080×1920 PNGs (day recap + trip report card)
+  in a share overlay — long-press to save, or Download via the Artifact
+  downloads API when available.
+- **Sounds** (cha-ching / sad trombone / fanfare / squeak, synthesized, mutable
+  in Settings), **confetti** (skipped under reduced-motion), and a once-a-day
+  fake **MTA service advisory** keyed to yesterday's performance.
+
 ## Data & backups
 
 State auto-saves to `localStorage` (`vianancial.v1`, versioned schema) on every
