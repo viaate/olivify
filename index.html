@@ -1,0 +1,2219 @@
+<title>The Via-nancial District</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0f11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Via-nancial">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+/* ============================================================
+   THE VIA-NANCIAL DISTRICT
+   Via's official NYC money situation. MTA-signage energy,
+   bodega-receipt soul. Categories ride the E, F and S lines.
+   ============================================================ */
+
+:root{
+  color-scheme: light dark;
+  /* surfaces */
+  --bg:#f2f1ed;
+  --tile-line:rgba(20,23,26,.07);
+  --card:#ffffff;
+  --card-edge:rgba(20,23,26,.12);
+  --shadow:0 1px 2px rgba(20,23,26,.08), 0 4px 14px rgba(20,23,26,.06);
+  /* ink */
+  --ink:#14171a;
+  --ink-2:#4c5259;
+  --ink-3:#8a9099;
+  /* taxi-cab accent (interactive only — never a data series) */
+  --accent:#f7c500;
+  --accent-down:#e0b300;
+  --accent-ink:#161616;
+  /* categorical series — validated light set */
+  --eats:#077038;
+  --fun:#f06a24;
+  --stuff:#2a63d4;
+  /* status (reserved, never a series) */
+  --danger:#c72c1e;
+  --danger-soft:rgba(199,44,30,.1);
+  --good:#0b6e34;
+  --warnbg:#fdf3d0;
+  --warnink:#6b5200;
+  /* the sign + the rat */
+  --sign:#0e0f11;
+  --sign-ink:#fefefe;
+  --rat:#878d96;
+  --rat-dark:#5d636b;
+  --rat-pink:#e8a0a8;
+  --tile-bg:
+    repeating-linear-gradient(0deg, transparent 0 47px, var(--tile-line) 47px 48px),
+    repeating-linear-gradient(90deg, transparent 0 95px, var(--tile-line) 95px 96px);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#101214;
+    --tile-line:rgba(255,255,255,0);
+    --card:#191c20;
+    --card-edge:rgba(242,243,245,.12);
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+    --ink:#f2f3f5;
+    --ink-2:#aeb4bc;
+    --ink-3:#767d86;
+    --accent:#f7c500;
+    --accent-down:#ffd633;
+    --accent-ink:#161616;
+    --eats:#12a355;
+    --fun:#e8641f;
+    --stuff:#4b82e8;
+    --danger:#ff6f61;
+    --danger-soft:rgba(255,111,97,.14);
+    --good:#3dbd77;
+    --warnbg:#3a3110;
+    --warnink:#f4d878;
+    --sign:#000000;
+    --sign-ink:#fefefe;
+    --rat:#9aa1ab;
+    --rat-dark:#c6ccd4;
+    --rat-pink:#d98f98;
+    --tile-bg:none;
+  }
+}
+/* the claude.ai theme toggle stamps data-theme and must win both ways */
+:root[data-theme="light"]{
+  --bg:#f2f1ed; --tile-line:rgba(20,23,26,.07); --card:#ffffff;
+  --card-edge:rgba(20,23,26,.12);
+  --shadow:0 1px 2px rgba(20,23,26,.08), 0 4px 14px rgba(20,23,26,.06);
+  --ink:#14171a; --ink-2:#4c5259; --ink-3:#8a9099;
+  --accent:#f7c500; --accent-down:#e0b300; --accent-ink:#161616;
+  --eats:#077038; --fun:#f06a24; --stuff:#2a63d4;
+  --danger:#c72c1e; --danger-soft:rgba(199,44,30,.1); --good:#0b6e34;
+  --warnbg:#fdf3d0; --warnink:#6b5200;
+  --sign:#0e0f11; --sign-ink:#fefefe;
+  --rat:#878d96; --rat-dark:#5d636b; --rat-pink:#e8a0a8;
+  --tile-bg:
+    repeating-linear-gradient(0deg, transparent 0 47px, var(--tile-line) 47px 48px),
+    repeating-linear-gradient(90deg, transparent 0 95px, var(--tile-line) 95px 96px);
+}
+:root[data-theme="dark"]{
+  --bg:#101214; --tile-line:rgba(255,255,255,0); --card:#191c20;
+  --card-edge:rgba(242,243,245,.12); --shadow:0 1px 2px rgba(0,0,0,.4);
+  --ink:#f2f3f5; --ink-2:#aeb4bc; --ink-3:#767d86;
+  --accent:#f7c500; --accent-down:#ffd633; --accent-ink:#161616;
+  --eats:#12a355; --fun:#e8641f; --stuff:#4b82e8;
+  --danger:#ff6f61; --danger-soft:rgba(255,111,97,.14); --good:#3dbd77;
+  --warnbg:#3a3110; --warnink:#f4d878;
+  --sign:#000000; --sign-ink:#fefefe;
+  --rat:#9aa1ab; --rat-dark:#c6ccd4; --rat-pink:#d98f98;
+  --tile-bg:none;
+}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; padding:0}
+body{
+  background:var(--bg);
+  background-image:var(--tile-bg);
+  color:var(--ink);
+  font-family:'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif;
+  font-size:16px; line-height:1.45;
+  min-height:100dvh;
+  overscroll-behavior-y:none;
+}
+button{font:inherit; color:inherit; background:none; border:none; padding:0; cursor:pointer}
+button:active{transform:scale(.97)}
+input,select,textarea{font:inherit; color:var(--ink)}
+button,input,select,textarea,a{touch-action:manipulation}
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important; transition:none !important}
+}
+
+.app{max-width:520px; margin:0 auto; padding:0 14px calc(96px + env(safe-area-inset-bottom))}
+
+/* ---- station sign header (black in both themes, like the real thing) ---- */
+.sign{
+  background:var(--sign); color:var(--sign-ink);
+  margin:14px 0 16px; padding:14px 16px 12px;
+  border-radius:6px; box-shadow:var(--shadow);
+  border-bottom:6px solid var(--accent);
+}
+.sign h1{
+  margin:0; font-size:21px; font-weight:800; letter-spacing:.01em; line-height:1.15;
+  text-wrap:balance;
+}
+.sign .sub{
+  display:flex; align-items:center; gap:8px; margin-top:6px;
+  font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:rgba(254,254,254,.75);
+}
+.bullets{display:inline-flex; gap:5px}
+.bullet{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:20px; height:20px; border-radius:50%;
+  font-size:11px; font-weight:800; color:#fff; letter-spacing:0;
+}
+.bullet.sm{width:16px; height:16px; font-size:9px}
+.b-eats{background:var(--eats)} .b-fun{background:var(--fun)} .b-stuff{background:var(--stuff)}
+
+/* ---- cards & general bits ---- */
+.card{
+  background:var(--card); border:1px solid var(--card-edge); border-radius:12px;
+  box-shadow:var(--shadow); padding:16px; margin-bottom:14px;
+}
+.label{
+  font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-3);
+}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
+.danger-ink{color:var(--danger)} .good-ink{color:var(--good)}
+
+/* ---- rat + bubble ---- */
+.rat-row{display:flex; align-items:flex-end; gap:10px; margin-bottom:14px}
+.rat-svg{flex:0 0 96px; width:96px; height:auto}
+.bubble{
+  position:relative; flex:1; background:var(--card); border:1px solid var(--card-edge);
+  border-radius:12px; box-shadow:var(--shadow); padding:10px 12px;
+  font-size:14px; color:var(--ink-2); margin-bottom:14px;
+}
+.bubble::after{
+  content:''; position:absolute; left:-7px; bottom:14px;
+  width:12px; height:12px; background:var(--card);
+  border-left:1px solid var(--card-edge); border-bottom:1px solid var(--card-edge);
+  transform:rotate(45deg);
+}
+.bubble b{color:var(--ink)}
+
+/* ---- today headline ---- */
+.headline{
+  font-size:clamp(44px, 15vw, 60px); font-weight:800; letter-spacing:-.02em;
+  line-height:1; margin:4px 0 2px;
+}
+.headline.over{color:var(--danger)}
+.stat-row{display:flex; gap:0; margin-top:14px; border-top:1px solid var(--card-edge); padding-top:12px}
+.stat{flex:1; min-width:0}
+.stat + .stat{border-left:1px solid var(--card-edge); padding-left:12px}
+.stat .v{font-size:17px; font-weight:700}
+.stat .v.over{color:var(--danger)}
+.daybar{height:8px; border-radius:99px; background:var(--bg); overflow:hidden; margin-top:14px}
+.daybar > i{display:block; height:100%; border-radius:99px; background:var(--accent)}
+.daybar > i.over{background:var(--danger)}
+.chip-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+.chip{
+  display:inline-flex; align-items:center; gap:6px;
+  border:1px solid var(--card-edge); border-radius:99px; padding:5px 12px;
+  font-size:13px; font-weight:600; color:var(--ink-2); background:var(--card);
+}
+
+/* ---- expense rows ---- */
+.exp-list{margin-top:8px}
+.exp{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  padding:11px 2px; min-height:48px; border-top:1px solid var(--card-edge);
+}
+.exp:first-child{border-top:none}
+.exp .cat-dot{flex:0 0 auto}
+.exp .what{flex:1; min-width:0}
+.exp .what .n{display:block; font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.exp .what .s{display:block; font-size:12px; color:var(--ink-3)}
+.exp .amt{font-weight:700; font-size:15px; white-space:nowrap}
+.exp .amt.dd{color:var(--ink-3); text-decoration:none}
+.badge{
+  display:inline-block; font-size:10px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; border:1px solid var(--card-edge); border-radius:4px;
+  padding:1px 5px; color:var(--ink-3); margin-left:6px; vertical-align:1px;
+}
+
+/* ---- receipt (history) ---- */
+.receipt{
+  font-family:ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:13px;
+}
+.receipt .day-h{
+  display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+  padding:10px 2px 4px; border-top:1px dashed var(--card-edge); margin-top:6px;
+  font-weight:700;
+}
+.receipt .day-h:first-child{border-top:none; margin-top:0}
+.receipt .day-h .tot{font-weight:700}
+.receipt .day-h .tot.over{color:var(--danger)}
+.receipt .day-h .tot.under{color:var(--good)}
+.receipt .day-sub{font-size:11px; color:var(--ink-3); padding:0 2px 4px}
+.tear{
+  text-align:center; color:var(--ink-3); letter-spacing:.3em; font-size:11px;
+  padding:10px 0 2px; font-family:ui-monospace, Menlo, monospace;
+}
+
+/* ---- stats ---- */
+.legend{display:flex; flex-direction:column; gap:8px; margin-top:12px}
+.legend .lrow{display:flex; align-items:center; gap:8px; font-size:14px}
+.legend .lrow .grow{flex:1}
+.legend .lrow .amt{font-weight:700}
+.cat-dot{width:18px; height:18px; border-radius:50%; display:inline-flex; align-items:center;
+  justify-content:center; font-size:10px; font-weight:800; color:#fff; flex:0 0 auto}
+.d-eats{background:var(--eats)} .d-fun{background:var(--fun)} .d-stuff{background:var(--stuff)}
+.chart-note{font-size:12px; color:var(--ink-3); margin-top:8px}
+.pace-tip{
+  font-size:12px; font-weight:600; color:var(--ink-2); min-height:18px;
+  margin-top:6px; font-variant-numeric:tabular-nums;
+}
+.funstat{display:flex; justify-content:space-between; gap:10px; padding:9px 2px;
+  border-top:1px solid var(--card-edge); font-size:14px}
+.funstat:first-of-type{border-top:none}
+.funstat .k{color:var(--ink-2)}
+.funstat .v{font-weight:700; text-align:right}
+
+/* ---- settings ---- */
+.card.receipt{border-radius:3px}
+.field{display:flex; flex-direction:column; gap:5px}
+.field.wide{grid-column:1 / -1}
+.field input[type=text], .field input[type=date], .field input[type=number], .field textarea{
+  border:1px solid var(--card-edge); background:var(--bg); border-radius:8px;
+  padding:10px 12px; font-size:16px; width:100%; min-height:44px;
+}
+.field textarea{min-height:96px; resize:vertical;
+  font-family:ui-monospace, Menlo, monospace; font-size:16px}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border-radius:10px; padding:12px 16px; font-weight:700; font-size:15px;
+  min-height:48px; border:1px solid var(--card-edge); background:var(--card);
+  width:100%; margin-top:10px;
+}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent}
+.btn.primary:active{background:var(--accent-down)}
+.btn.destructive{color:var(--danger); border-color:var(--danger)}
+.btn.small{width:auto; min-height:40px; padding:8px 14px; font-size:14px; margin-top:0}
+.qa-row{display:flex; align-items:center; gap:10px; padding:10px 2px; min-height:48px;
+  border-top:1px solid var(--card-edge); width:100%; text-align:left}
+.qa-row:first-child{border-top:none}
+.qa-row .e{font-size:20px; flex:0 0 28px; text-align:center}
+.qa-row .l{flex:1; font-weight:600}
+.qa-row .p{font-weight:700}
+.preview-line{font-size:13px; color:var(--ink-2); margin-top:10px; font-variant-numeric:tabular-nums}
+.err{color:var(--danger); font-size:13px; font-weight:600; margin-top:8px}
+.import-preview{
+  border:1px dashed var(--card-edge); border-radius:10px; padding:12px; margin-top:10px;
+  font-size:14px;
+}
+
+/* ---- banners & toast ---- */
+.banner{
+  background:var(--warnbg); color:var(--warnink); border-radius:10px;
+  padding:10px 12px; font-size:13px; font-weight:600; margin-bottom:12px;
+  display:flex; gap:10px; align-items:flex-start;
+}
+.banner .bx{margin-left:auto; font-weight:800; padding:0 4px; min-height:32px}
+#toast-zone{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(96px + env(safe-area-inset-bottom)); z-index:96; width:min(92vw, 480px);
+}
+.toast{
+  background:var(--sign); color:var(--sign-ink); border-radius:10px;
+  padding:12px 14px; font-size:14px; box-shadow:var(--shadow);
+  display:flex; align-items:center; gap:10px; margin-top:8px;
+  animation:pop .18s ease-out;
+}
+.toast button{color:var(--accent); font-weight:800; margin-left:auto; min-height:32px;
+  letter-spacing:.06em; text-transform:uppercase; font-size:12px}
+@keyframes pop{from{opacity:0; transform:translateY(8px)} to{opacity:1}}
+
+/* ---- countdown / wrapup ---- */
+.hero-days{font-size:clamp(52px,18vw,72px); font-weight:800; letter-spacing:-.02em; line-height:1}
+.grade{
+  display:inline-block; font-size:34px; font-weight:800; border:3px solid currentColor;
+  border-radius:10px; padding:4px 14px; transform:rotate(-4deg); margin:8px 0;
+}
+
+/* ---- tab bar ---- */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:var(--card); border-top:1px solid var(--card-edge);
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+}
+.tabbar .inner{max-width:520px; margin:0 auto; display:flex; align-items:center}
+.tab{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:6px 0 4px; min-height:48px; color:var(--ink-3);
+  font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+}
+.tab svg{width:22px; height:22px}
+.tab[aria-current="true"]{color:var(--ink)}
+.fab{
+  flex:0 0 auto; width:58px; height:58px; border-radius:50%;
+  background:var(--accent); color:var(--accent-ink);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow); margin:0 6px; transform:translateY(-14px);
+  border:3px solid var(--bg);
+}
+.fab:active{transform:translateY(-14px) scale(.95)}
+.fab svg{width:26px; height:26px}
+
+/* ---- add/edit sheet ---- */
+#sheet-zone .backdrop{
+  position:fixed; inset:0; background:rgba(8,9,10,.55); z-index:70;
+}
+#sheet-zone .panel{
+  position:fixed; left:0; right:0; bottom:0; z-index:71;
+  background:var(--card); border-radius:18px 18px 0 0;
+  max-height:92dvh; overflow-y:auto;
+  padding:10px 16px calc(18px + env(safe-area-inset-bottom));
+  animation:slide-up .22s ease-out;
+}
+@keyframes slide-up{from{transform:translateY(30px); opacity:.6} to{transform:none; opacity:1}}
+.grab{width:44px; height:5px; border-radius:99px; background:var(--card-edge); margin:2px auto 12px}
+.sheet-h{display:flex; align-items:baseline; gap:8px; margin-bottom:10px}
+.sheet-h h2{margin:0; font-size:18px; font-weight:800}
+.sheet-h .x{margin-left:auto; color:var(--ink-3); font-weight:700; font-size:14px; min-height:40px; padding:0 6px}
+.qa-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px}
+.qa-tile{
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  border:1px solid var(--card-edge); border-radius:10px; padding:9px 2px 7px;
+  background:var(--bg); min-height:64px;
+}
+.qa-tile .e{font-size:20px; line-height:1.2}
+.qa-tile .l{font-size:10px; font-weight:700; color:var(--ink-2); text-align:center;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%}
+.qa-tile .p{font-size:11px; font-weight:700}
+.amount-wrap{display:flex; align-items:center; gap:6px; margin-bottom:12px;
+  border:1px solid var(--card-edge); border-radius:12px; background:var(--bg); padding:8px 14px}
+.amount-wrap .cur{font-size:26px; font-weight:800; color:var(--ink-3)}
+.amount-wrap input{
+  border:none; background:none; font-size:34px; font-weight:800; width:100%;
+  font-variant-numeric:tabular-nums; padding:4px 0; letter-spacing:-.01em; min-height:48px;
+}
+.amount-wrap input:focus{outline:none}
+.seg{display:flex; gap:8px; margin-bottom:12px}
+.seg button{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+  border:1.5px solid var(--card-edge); border-radius:10px; padding:10px 4px;
+  font-weight:700; font-size:13px; color:var(--ink-2); min-height:48px;
+}
+.seg button[aria-pressed="true"]{border-color:var(--ink); color:var(--ink); background:var(--bg)}
+.sheet-row{display:flex; gap:10px; margin-bottom:12px}
+.sheet-row .field{flex:1}
+.dd-toggle{
+  display:flex; align-items:center; gap:10px; width:100%;
+  border:1.5px solid var(--card-edge); border-radius:10px; padding:10px 12px;
+  min-height:48px; font-weight:600; font-size:14px; color:var(--ink-2);
+  margin-bottom:12px; text-align:left;
+}
+.dd-toggle .knob{
+  margin-left:auto; width:44px; height:26px; border-radius:99px; background:var(--card-edge);
+  position:relative; transition:background .15s; flex:0 0 auto;
+}
+.dd-toggle .knob::after{
+  content:''; position:absolute; top:3px; left:3px; width:20px; height:20px;
+  border-radius:50%; background:var(--card); transition:left .15s;
+}
+.dd-toggle[aria-pressed="true"]{border-color:var(--accent); color:var(--ink)}
+.dd-toggle[aria-pressed="true"] .knob{background:var(--accent)}
+.dd-toggle[aria-pressed="true"] .knob::after{left:21px}
+.sheet-actions{display:flex; gap:10px}
+.sheet-actions .btn{margin-top:4px}
+
+.pace-svg text{font-family:'Helvetica Neue', Helvetica, Arial, sans-serif}
+.center-empty{text-align:center; color:var(--ink-3); padding:22px 8px; font-size:14px}
+h2.sec{font-size:16px; font-weight:800; margin:0 0 10px}
+#sheet-zone .panel:focus{outline:none}
+
+/* ---- Carlo is interactive now ---- */
+.rat-btn{flex:0 0 96px; padding:0}
+.rat-btn:active{transform:scale(.95)}
+.rat-svg{width:100%; height:auto; display:block}
+@keyframes squeakjump{0%{transform:none}30%{transform:translateY(-7px) rotate(-4deg)}60%{transform:translateY(1px) rotate(2deg)}100%{transform:none}}
+.rat-btn.bounce{animation:squeakjump .4s ease}
+
+/* ---- badge wall ---- */
+.badges{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.badge-card{display:flex; gap:8px; align-items:flex-start;
+  border:1px solid var(--card-edge); border-radius:10px; padding:9px 10px}
+.badge-card.locked{opacity:.45; filter:grayscale(1)}
+.badge-card .be{font-size:20px; line-height:1.2}
+.badge-card .bn{font-weight:700; font-size:12px; display:block}
+.badge-card .bd{font-size:11px; color:var(--ink-3)}
+
+/* ---- afford-it + split ---- */
+#afford-amt{border:1px solid var(--card-edge); background:var(--bg); border-radius:8px;
+  padding:10px 12px; font-size:16px; width:100%; min-height:48px}
+.afford-row{display:flex; gap:8px; align-items:stretch}
+.afford-row .btn{width:auto; margin-top:0; flex:0 0 auto}
+.split-row{display:flex; gap:8px; align-items:center; margin:-4px 0 12px}
+.split-row button{border:1px solid var(--card-edge); border-radius:8px; padding:6px 14px;
+  font-weight:700; font-size:14px; color:var(--ink-2); min-height:38px; background:var(--bg)}
+
+/* ---- MTA service advisory ---- */
+.advisory{background:var(--sign); color:var(--sign-ink); border-radius:8px;
+  border-left:6px solid var(--fun); padding:11px 13px; margin-bottom:12px;
+  font-size:13px; line-height:1.5}
+.advisory .ah{display:flex; align-items:center; font-size:10px; font-weight:800;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:3px}
+.advisory .ah button{margin:-10px -8px -10px auto; color:var(--sign-ink); font-weight:800;
+  min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center}
+
+/* ---- share overlay ---- */
+#share-zone .share-back{position:fixed; inset:0; z-index:80; background:rgba(6,7,8,.86);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; padding:20px}
+#share-zone .share-img{max-width:min(84vw,340px); max-height:62vh; border-radius:10px;
+  box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#share-zone .share-hint{color:#e8e9eb; font-size:13px; font-weight:600; text-align:center}
+#share-zone .btn{max-width:340px}
+</style>
+
+<noscript><p style="padding:20px">This app needs JavaScript the way NYC needs bagels: non-negotiably. Please turn it on.</p></noscript>
+
+<div class="app">
+  <div id="banner-zone"></div>
+  <header class="sign" id="sign"></header>
+  <main id="screen"></main>
+</div>
+
+<nav class="tabbar" aria-label="Sections">
+  <div class="inner" id="tabbar"></div>
+</nav>
+
+<div id="sheet-zone"></div>
+<div id="share-zone"></div>
+<div id="toast-zone" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   §A DATES — all days are America/New_York YYYY-MM-DD keys
+   ========================================================= */
+var TZ = 'America/New_York';
+var caFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' });
+
+function realTodayKey(){ return caFmt.format(new Date()); }
+function keyToUTC(k){
+  var p = k.split('-');
+  return Date.UTC(+p[0], +p[1]-1, +p[2]);
+}
+function isKey(k){ return typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k) && !isNaN(keyToUTC(k)); }
+function diffDays(a, b){ return Math.round((keyToUTC(b) - keyToUTC(a)) / 86400000); }
+function addDays(k, n){ return new Date(keyToUTC(k) + n*86400000).toISOString().slice(0,10); }
+function clampKey(k, lo, hi){ return k < lo ? lo : (k > hi ? hi : k); }
+var dayFmt = new Intl.DateTimeFormat('en-US', { timeZone:'UTC', weekday:'short', month:'short', day:'numeric' });
+function fmtDay(k){ return dayFmt.format(new Date(keyToUTC(k))); }
+
+/* =========================================================
+   §B MONEY — integer cents in, formatted strings out
+   ========================================================= */
+function parseCents(str){
+  if (typeof str !== 'string') return null;
+  var s = str.trim().replace(/^\$/,'').replace(/,/g,'');
+  if (!/^(\d{1,7}(\.\d{1,2})?|\.\d{1,2})$/.test(s)) return null;
+  var cents = Math.round(parseFloat(s) * 100);
+  if (!isFinite(cents) || cents < 0 || cents > 100000000) return null;
+  return cents;
+}
+function fmt$(cents){
+  var neg = cents < 0;
+  var a = Math.abs(cents);
+  var d = Math.floor(a/100), c = String(a%100).padStart(2,'0');
+  return (neg?'−$':'$') + d.toLocaleString('en-US') + '.' + c;
+}
+function fmtWhole(cents){
+  var neg = cents < 0;
+  return (neg?'−$':'$') + Math.round(Math.abs(cents)/100).toLocaleString('en-US');
+}
+
+/* =========================================================
+   §C STORE — one key, versioned, republish-proof
+   ========================================================= */
+var KEY = 'vianancial.v1';
+var SCHEMA = 2;
+var HOME_URL = 'https://viaate.github.io/olivify/';
+var MIGRATIONS = [
+  // v1 → v2: dining dollars became a weekly use-it-or-lose-it allotment
+  function(st){
+    st.settings.ddPerWeekCents = 3000;
+    delete st.settings.diningDollarsStartCents;
+    st.schemaVersion = 2;
+    return st;
+  }
+];
+var CATS = {
+  eats:  { label:'Eats',  full:'Food & drinks',   letter:'E' },
+  fun:   { label:'Fun',   full:'Fun & going out', letter:'F' },
+  stuff: { label:'Stuff', full:'Shopping & misc', letter:'S' }
+};
+var CAT_ORDER = ['eats','fun','stuff'];
+
+function uid(){
+  try { return 'e_' + crypto.randomUUID(); }
+  catch(e){ return 'e_' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+}
+function defaultQuickAdds(){
+  return [
+    { id: uid(), emoji:'☕', label:'Coffee',     amountCents:600,  category:'eats',  note:'Coffee' },
+    { id: uid(), emoji:'🍕', label:'Slice',      amountCents:400,  category:'eats',  note:'Pizza slice' },
+    { id: uid(), emoji:'🥯', label:'Bodega run', amountCents:1200, category:'eats',  note:'Bodega run' },
+    { id: uid(), emoji:'🥪', label:'Lunch',      amountCents:1500, category:'eats',  note:'Lunch' },
+    { id: uid(), emoji:'🍜', label:'Dinner out', amountCents:3000, category:'eats',  note:'Dinner out' },
+    { id: uid(), emoji:'🍸', label:'Going out',  amountCents:2500, category:'fun',   note:'Going out' },
+    { id: uid(), emoji:'🖼️', label:'Museum',    amountCents:2000, category:'fun',   note:'Museum' },
+    { id: uid(), emoji:'🗽', label:'Souvenir',   amountCents:1500, category:'stuff', note:'Souvenir' }
+  ];
+}
+function seedState(){
+  return {
+    schemaVersion: SCHEMA,
+    settings: {
+      tripStart: '2026-07-27',
+      tripEnd:   '2026-08-09',
+      totalBudgetCents: 180000,
+      ddPerWeekCents: 3000,
+      name: 'Via'
+    },
+    expenses: [],
+    quickAdds: defaultQuickAdds(),
+    meta: metaDefaults({ createdAt: Date.now() })
+  };
+}
+function metaDefaults(m){
+  m = m && typeof m === 'object' ? m : {};
+  return {
+    createdAt: m.createdAt || Date.now(),
+    lastSavedAt: m.lastSavedAt || null,
+    sound: m.sound !== false,
+    ratTaps: Number.isInteger(m.ratTaps) ? m.ratTaps : 0,
+    crown: !!m.crown,
+    seenBadges: Array.isArray(m.seenBadges) ? m.seenBadges.filter(function(x){ return typeof x === 'string'; }).slice(0, 64) : [],
+    lastAlertDay: isKey(m.lastAlertDay) ? m.lastAlertDay : null
+  };
+}
+
+var state;                 // persisted payload
+var ui = {                 // never persisted
+  tab: 'today',
+  debugNow: null,
+  memoryMode: false,
+  readOnly: false,
+  corruptRaw: null,
+  bannerDismissed: {},
+  returnFocus: null,
+  lastRenderedDay: null,
+  importPreview: null,
+  sheet: null              // {mode:'add'|'edit'|'qa-edit'|'qa-add', ...}
+};
+
+function storageGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function storageSet(k, v){ try { localStorage.setItem(k, v); return true; } catch(e){ return false; } }
+
+function load(){
+  var raw = storageGet(KEY);
+  if (raw === null){
+    state = seedState();
+    if (!save()) ui.memoryMode = true;
+    return;
+  }
+  var parsed = null;
+  try { parsed = JSON.parse(raw); } catch(e){ /* fall through */ }
+  if (!parsed || typeof parsed !== 'object' || !parsed.settings || !Array.isArray(parsed.expenses)){
+    storageSet(KEY + '.corrupt', raw);
+    ui.corruptRaw = raw;
+    state = seedState();
+    save();
+    return;
+  }
+  if (typeof parsed.schemaVersion === 'number' && parsed.schemaVersion > SCHEMA){
+    // data written by a NEWER page than this one: read-only, never write.
+    // meta still gets in-memory defaults (never saved) so render paths hold.
+    ui.readOnly = true;
+    state = parsed;
+    state.meta = metaDefaults(state.meta);
+    return;
+  }
+  if (parsed.schemaVersion < SCHEMA){
+    storageSet(KEY + '.bak', raw);
+    while (parsed.schemaVersion < SCHEMA){
+      parsed = MIGRATIONS[parsed.schemaVersion - 1](parsed);
+    }
+    state = parsed;
+    save();
+  } else {
+    state = parsed;
+  }
+  if (!Array.isArray(state.quickAdds)) state.quickAdds = defaultQuickAdds();
+  state.meta = metaDefaults(state.meta);
+}
+function save(){
+  if (ui.readOnly) return false;
+  state.meta = state.meta || {};
+  state.meta.lastSavedAt = Date.now();
+  var ok = storageSet(KEY, JSON.stringify(state));
+  if (!ok) ui.memoryMode = true;
+  return ok;
+}
+function commit(fn){
+  if (ui.readOnly){
+    toast('Read-only mode — nothing changed. Export a backup, then reload.');
+    return;
+  }
+  fn(state);
+  save();
+  render();
+}
+
+/* =========================================================
+   §D LOGIC — pure budget math, no DOM anywhere in here
+   ========================================================= */
+function nowKey(){ return ui.debugNow || realTodayKey(); }
+
+function tripDays(s){ return diffDays(s.tripStart, s.tripEnd) + 1; }
+function dayNum(s, k){ return diffDays(s.tripStart, clampKey(k, s.tripStart, s.tripEnd)) + 1; }
+function cumAllow(s, n){ return Math.round(s.totalBudgetCents * n / tripDays(s)); }
+function allowForDay(s, n){ return cumAllow(s, n) - cumAllow(s, n - 1); }
+function phase(s, k){ return k < s.tripStart ? 'before' : (k > s.tripEnd ? 'after' : 'during'); }
+
+function realSpend(exps){ return exps.filter(function(e){ return !e.diningDollars; }); }
+function sumCents(exps){ return exps.reduce(function(t,e){ return t + e.amountCents; }, 0); }
+
+function spentThrough(s, exps, k){
+  var cutoff = clampKey(k, s.tripStart, s.tripEnd);
+  return sumCents(realSpend(exps).filter(function(e){
+    return clampKey(e.date, s.tripStart, s.tripEnd) <= cutoff;
+  }));
+}
+function availableToday(s, exps, k){
+  return cumAllow(s, dayNum(s, k)) - spentThrough(s, exps, k);
+}
+function totalSpent(exps){ return sumCents(realSpend(exps)); }
+function totalRemaining(s, exps){ return s.totalBudgetCents - totalSpent(exps); }
+function daysRemaining(s, k){ return tripDays(s) - dayNum(s, k) + 1; }
+function pace(s, exps, k){
+  var d = daysRemaining(s, k);
+  return d > 0 ? Math.floor(totalRemaining(s, exps) / d) : 0;
+}
+function daySpent(exps, k){
+  return sumCents(realSpend(exps).filter(function(e){ return e.date === k; }));
+}
+function ddSpent(exps){ return sumCents(exps.filter(function(e){ return e.diningDollars; })); }
+/* dining dollars reset weekly: week 0 = trip days 1-7, week 1 = days 8-14, ... */
+function weekIndex(s, k){ return Math.floor((dayNum(s, k) - 1) / 7); }
+function ddRemainingForWeek(s, exps, w, excludeId){
+  return s.ddPerWeekCents - sumCents(exps.filter(function(e){
+    return e.diningDollars && weekIndex(s, e.date) === w && e.id !== excludeId;
+  }));
+}
+function catSpent(exps, cat){
+  return sumCents(realSpend(exps).filter(function(e){ return e.category === cat; }));
+}
+function healthTier(s, exps, k){
+  if (phase(s, k) === 'before') return 'pretrip';
+  if (phase(s, k) === 'after')  return 'wrapup';
+  if (totalRemaining(s, exps) < 0) return 'busted';
+  var avail = availableToday(s, exps, k);
+  if (avail < 0) return 'overdrawn';
+  var allow = allowForDay(s, dayNum(s, k));
+  var r = allow > 0 ? avail / allow : 1;
+  if (r > 0.6) return 'flush';
+  if (r >= 0.2) return 'cruising';
+  return 'wobbly';
+}
+function underStreak(s, exps, k){
+  if (phase(s, k) === 'before') return 0;
+  var d = clampKey(k, s.tripStart, s.tripEnd);
+  var streak = 0;
+  while (d >= s.tripStart){
+    if (daySpent(exps, d) <= allowForDay(s, dayNum(s, d))) streak++;
+    else break;
+    d = addDays(d, -1);
+  }
+  return streak;
+}
+
+var logic = { tripDays:tripDays, dayNum:dayNum, cumAllow:cumAllow, allowForDay:allowForDay,
+  availableToday:availableToday, totalRemaining:totalRemaining, pace:pace,
+  weekIndex:weekIndex, ddRemainingForWeek:ddRemainingForWeek,
+  spentThrough:spentThrough, daySpent:daySpent, phase:phase, healthTier:healthTier };
+
+/* =========================================================
+   §E VOICE — Carlo "Slice" Ratigan, Chief Fiscal Rodent
+   ========================================================= */
+var LINES = {
+  flush: [
+    "Look at you. Financially thriving. Suspicious.",
+    "The 6 train is delayed but your budget is NOT.",
+    "You're so under budget the bodega cat is impressed. He's impressed by nothing.",
+    "Financial District? More like Financial <b>Distinguished</b>.",
+    "Spending slower than a crosstown bus. Iconic behavior.",
+    "Wall Street guys wish they had your discipline. And your MetroCard."
+  ],
+  cruising: [
+    "On pace. The MTA could never.",
+    "Perfectly balanced, like a bagel with the correct amount of schmear.",
+    "You're doing better than the Knicks. Low bar. Still.",
+    "Cruising like an express train — skipping the unnecessary stops.",
+    "Steady hands. Steady wallet. Steady slice.",
+    "This is what fiscal responsibility smells like. That or Canal St station."
+  ],
+  wobbly: [
+    "It's giving 'walk back over the bridge to save $2.90'.",
+    "Careful. You're one artisanal matcha from the danger zone.",
+    "Budget's shakier than a folding table in Washington Square.",
+    "Maybe today the museum donation is, uh, <b>suggested</b>.",
+    "Time to unlock your dollar-slice era. It's character building.",
+    "You've entered the 'tap water is a beverage, actually' zone."
+  ],
+  overdrawn: [
+    "Today's budget has left the platform. Tomorrow's train is coming.",
+    "Today = overdrawn. No judgment. (Some judgment. I'm a rat, not a saint.)",
+    "I have repossessed today's pizza. Union rules.",
+    "Today's numbers are down like the L train on a weekend.",
+    "We don't talk about today. Tomorrow, we rebuild."
+  ],
+  busted: [
+    "The whole budget is gone. This is now performance art.",
+    "Financial District? You've relocated to <b>Brokelyn</b>.",
+    "The budget has flatlined. Time to Venmo your feelings.",
+    "New plan: street performance. You've seen the buckets. How hard can it be?",
+    "I've seen this before. It ends with someone eating my pizza. Watch it."
+  ],
+  pretrip: [
+    "Stretch those spending muscles. Gently. GENTLY.",
+    "The city is waiting. So is the budget. Don't disappoint either of us.",
+    "Pre-trip briefing: the slice is $4, the vibes are free, the rest we track.",
+    "I cleaned the books. With my tail. You're welcome."
+  ],
+  emptyToday: [
+    "Nothing spent today. The bodega misses you.",
+    "Zero purchases. NYC has noticed and is a little offended.",
+    "No spending yet? In THIS economy? Legend."
+  ],
+  emptyHistory: [
+    "No purchases on record. The receipt printer sleeps.",
+    "Nothing here yet. Even I have receipts, and I live in a wall."
+  ],
+  saved: [
+    "Logged. The rat saw everything.",
+    "Noted. Your accountant (a rat) approves.",
+    "Added. Money well spent? TBD.",
+    "In the books. The books are a little greasy.",
+    "Recorded forever. Or until you delete it. Whichever."
+  ],
+  saveBtn: [ "Log it", "The rat saw nothing", "Cough it up", "Add to the pile" ],
+  deleted: "Gone. It never happened. Very good lawyer energy.",
+  restored: "Un-deleted. The past is back, baby.",
+  exported: "Backup made. Even your money has a fire escape now.",
+  copied: "Backup copied to clipboard. Paste it somewhere safe (not the group chat).",
+  ddBlocked: "Not enough dining dollars left for that week. They respawn on Mondays. Patience.",
+  imported: "Backup restored. It's like you never left. (You never left.)",
+  wisdom: [
+    "The dollar slice is never actually a dollar anymore. We mourn together.",
+    "Free NYC things: the Staten Island Ferry, the High Line, judging people on the subway.",
+    "Lots of museums are 'pay what you wish' for NY students. Wish responsibly.",
+    "Never eat within 100 feet of Times Square. Financial AND culinary advice.",
+    "A bodega bacon-egg-and-cheese solves 80% of problems. The other 20% need two.",
+    "If the subway car is empty at rush hour, there's a reason. Same goes for deals.",
+    "Tip your bartender. Skip the $19 espresso martini. Balance.",
+    "Chinatown has the best food-per-dollar ratio on the island. I have receipts. Literally.",
+    "Dumpling crawl &gt; fancy brunch. Save $40, gain a personality.",
+    "It's pronounced HOW-ston Street. This tip is free. Most aren't.",
+    "Central Park: free. The vibes: free. The $14 lemonade: NOT free. Focus.",
+    "I once dragged a whole slice down a subway staircase. Follow your dreams."
+  ],
+  alertGood: [
+    "GOOD SERVICE on all budget lines. Suspicious. We're investigating.",
+    "All trains running on time and so is your money. Weird day. Enjoy it.",
+    "No delays reported. The rat did a little dance on the third rail."
+  ],
+  alertBad: [
+    "PLANNED WORK: your wallet is running local this weekend. Expect delays between Fun and Stuff.",
+    "DELAYS on the spending line after yesterday's, uh, enthusiasm. Seek alternate snacks.",
+    "SIGNAL PROBLEMS at Yesterday St. The overspend is under review by a rat in a safety vest."
+  ]
+};
+/* ---- achievements: pure predicates over state, nothing stored but "seen" ---- */
+var hourFmt = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', hour12: false });
+function nyHour(ts){ return +hourFmt.format(new Date(ts)) % 24; }
+function noteCount(st, re){ return st.expenses.filter(function(e){ return re.test(e.note || ''); }).length; }
+var ACHIEVEMENTS = [
+  { id:'slice5', emoji:'🍕', name:'Dollar Slice Scholar', desc:'Log 5 pizza purchases. That’s a thesis.',
+    test:function(st){ return noteCount(st, /pizza|slice|🍕/i) >= 5; } },
+  { id:'bodega', emoji:'🥯', name:'Bodega Baron', desc:'5 bodega runs. The cat nods at you now.',
+    test:function(st){ return noteCount(st, /bodega/i) >= 5; } },
+  { id:'museum', emoji:'🖼️', name:'Museum Rat', desc:'3 museum-ish visits. Culture acquired.',
+    test:function(st){ return noteCount(st, /museum|moma|gallery|whitney|guggenheim|\bthe met\b|\bmet (museum|gala|cloisters)\b/i) >= 3; } },
+  { id:'early', emoji:'🌅', name:'Early Bird', desc:'Log something before 9am. Who ARE you?',
+    test:function(st){ return st.expenses.some(function(e){ return nyHour(e.createdAt) < 9; }); } },
+  { id:'owl', emoji:'🦉', name:'Night Owl', desc:'Log something after 11pm. The city that never sleeps, and neither do you apparently.',
+    test:function(st){ return st.expenses.some(function(e){ var h = nyHour(e.createdAt); return h >= 23 || h < 4; }); } },
+  { id:'zero', emoji:'🧊', name:'The Untouchable', desc:'A full trip day at $0.00. Chilling. Literally.',
+    test:function(st, k){
+      if (!st.expenses.length || k <= st.settings.tripStart) return false;
+      var stop = clampKey(k, st.settings.tripStart, addDays(st.settings.tripEnd, 1));
+      for (var d = st.settings.tripStart; d < stop && d <= st.settings.tripEnd; d = addDays(d, 1)){
+        if (daySpent(st.expenses, d) === 0) return true;
+      }
+      return false;
+    } },
+  { id:'streak5', emoji:'🔥', name:'Streak Freak', desc:'5 days under budget in a row.',
+    test:function(st, k){ return underStreak(st.settings, st.expenses, k) >= 5; } },
+  { id:'wallst', emoji:'💼', name:'Wall Street Energy', desc:'Drop $100+ in one purchase. Bold. Terrifying.',
+    test:function(st){ return st.expenses.some(function(e){ return !e.diningDollars && e.amountCents >= 10000; }); } },
+  { id:'mealmvp', emoji:'🎓', name:'Meal Plan MVP', desc:'Use $25+ of one week’s dining dollars.',
+    test:function(st){
+      var weeks = Math.ceil(tripDays(st.settings) / 7);
+      for (var w = 0; w < weeks; w++){
+        if (st.settings.ddPerWeekCents - ddRemainingForWeek(st.settings, st.expenses, w) >= 2500) return true;
+      }
+      return false;
+    } },
+  { id:'six', emoji:'🎫', name:'Sixth Borough', desc:'6+ purchases in one day. Busy little legend.',
+    test:function(st){
+      var by = {};
+      return st.expenses.some(function(e){ by[e.date] = (by[e.date] || 0) + 1; return by[e.date] >= 6; });
+    } }
+];
+function unlockedBadges(){
+  var k = nowKey();
+  return ACHIEVEMENTS.filter(function(a){
+    try { return a.test(state, k); } catch(e){ return false; }
+  });
+}
+function checkBadges(){
+  if (ui.readOnly) return;
+  var seen = state.meta.seenBadges || [];
+  var fresh = unlockedBadges().filter(function(a){ return seen.indexOf(a.id) === -1; });
+  if (!fresh.length) return;
+  state.meta.seenBadges = seen.concat(fresh.map(function(a){ return a.id; }));
+  save();
+  fresh.forEach(function(a){
+    toast('Badge earned: ' + a.emoji + ' <b>' + esc(a.name) + '</b>');
+  });
+  playSound('fanfare');
+  confettiBurst();
+}
+
+function seededPick(arr, extra){
+  var s = nowKey() + '|' + (extra || '');
+  var h = 0;
+  for (var i = 0; i < s.length; i++){ h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+  return arr[h % arr.length];
+}
+function ratLine(tier){
+  if (tier === 'pretrip'){
+    var d = diffDays(nowKey(), state.settings.tripStart);
+    return "<b>T-minus " + d + " day" + (d === 1 ? "" : "s") + ".</b> " + seededPick(LINES.pretrip, 'pre');
+  }
+  return seededPick(LINES[tier] || LINES.cruising, tier);
+}
+
+/* =========================================================
+   §F SVG — the rat, the donut, the pace chart
+   ========================================================= */
+function ratSVG(o){
+  o = o || {};
+  var crowned = !!(state && state.meta && state.meta.crown);
+  var svg = '<svg class="rat-svg" viewBox="0 0 132 92" role="img" aria-label="Carlo the pizza rat">' +
+    '<path d="M14 66 Q-6 58 6 42" fill="none" stroke="var(--rat-pink)" stroke-width="4" stroke-linecap="round"/>' +
+    '<ellipse cx="52" cy="60" rx="36" ry="23" fill="var(--rat)"/>' +
+    '<circle cx="88" cy="47" r="17" fill="var(--rat)"/>' +
+    '<circle cx="82" cy="30" r="8" fill="var(--rat)"/>' +
+    '<circle cx="82" cy="30" r="4" fill="var(--rat-pink)"/>' +
+    '<circle cx="94" cy="43" r="2.4" fill="var(--sign)"/>' +
+    '<circle cx="104.5" cy="50" r="2.6" fill="var(--rat-pink)"/>' +
+    '<path d="M103 54 q-6 5 -12 4 M103 50 q-7 1 -13 -1" fill="none" stroke="var(--rat-dark)" stroke-width="1.2" stroke-linecap="round"/>' +
+    '<ellipse cx="38" cy="82" rx="7" ry="4" fill="var(--rat-dark)"/>' +
+    '<ellipse cx="64" cy="83" rx="7" ry="4" fill="var(--rat-dark)"/>';
+  // the slice: grayed with flies when today's overdrawn, swapped for a tiny
+  // violin when the whole trip is busted, hot and fresh otherwise
+  if (o.tier === 'busted'){
+    svg += '<ellipse cx="110" cy="70" rx="10" ry="6.5" fill="#8a5a2b"/>' +
+      '<rect x="116" y="56" width="3" height="13" fill="#5d3a17" transform="rotate(32 117 62)"/>' +
+      '<line x1="98" y1="78" x2="126" y2="60" stroke="#d9c9a3" stroke-width="1.6"/>';
+  } else if (o.tier === 'overdrawn'){
+    svg += '<path d="M96 58 L128 66 L100 80 Z" fill="var(--rat-dark)" opacity=".55"/>' +
+      '<circle cx="118" cy="52" r="1.6" fill="var(--ink-3)"/><circle cx="124" cy="57" r="1.6" fill="var(--ink-3)"/>';
+  } else {
+    svg += '<path d="M96 58 L128 66 L100 80 Z" fill="var(--fun)"/>' +
+      '<path d="M96 58 L128 66" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>' +
+      '<circle cx="106" cy="67" r="2.3" fill="var(--danger)"/>' +
+      '<circle cx="112" cy="71" r="2.3" fill="var(--danger)"/>';
+  }
+  if (o.tier === 'flush'){
+    svg += '<rect x="88" y="38" width="13" height="9" rx="3" fill="#15171a"/>' +
+      '<line x1="88" y1="42" x2="79" y2="39" stroke="#15171a" stroke-width="2.2" stroke-linecap="round"/>';
+  }
+  if (o.tier === 'wobbly'){
+    svg += '<path d="M74 38 q-3.5 5.5 0 8 q3.5 -2.5 0 -8" fill="#7ab6f0"/>';
+  }
+  if (crowned){
+    svg += '<path d="M80 26 l3 -9 4.5 6 4.5 -9 4.5 9 4.5 -6 3 9 z" fill="var(--accent)" stroke="var(--sign)" stroke-width="1"/>';
+  } else if ((o.streak || 0) >= 3 && (o.tier === 'flush' || o.tier === 'cruising')){
+    svg += '<path d="M96 11 L88 29 L104 27 Z" fill="var(--stuff)"/>' +
+      '<circle cx="96" cy="10" r="2.6" fill="var(--accent)"/>';
+  }
+  return svg + '</svg>';
+}
+function currentQuip(){
+  return ui.ratQuipDay === nowKey() ? ui.ratQuip : null;  // quips expire at day flip
+}
+function ratRow(opts, bubble){
+  return '<div class="rat-row">' +
+    '<button class="rat-btn" data-action="rat-tap" aria-label="Poke Carlo the rat">' + ratSVG(opts) + '</button>' +
+    '<div class="bubble" data-testid="rat-line">' + bubble + '</div></div>';
+}
+function donutSVG(parts){
+  // parts: [{cat, cents}] in CAT_ORDER; 2px surface gaps between arcs
+  var total = parts.reduce(function(t,p){ return t + p.cents; }, 0);
+  var R = 70, C = 2 * Math.PI * R;
+  var svg = '<svg viewBox="0 0 200 200" style="width:min(230px,60vw); display:block; margin:0 auto">';
+  if (total <= 0){
+    svg += '<circle cx="100" cy="100" r="' + R + '" fill="none" stroke="var(--card-edge)" stroke-width="26"/>';
+    svg += '<text x="100" y="96" text-anchor="middle" font-size="13" fill="var(--ink-3)">nothing yet</text>';
+    svg += '<text x="100" y="114" text-anchor="middle" font-size="13" fill="var(--ink-3)">(rude)</text></svg>';
+    return svg;
+  }
+  var offset = 0, GAP = 5;
+  parts.forEach(function(p){
+    if (p.cents <= 0) return;
+    var frac = p.cents / total;
+    var len = Math.max(frac * C - GAP, 0.5);
+    svg += '<circle cx="100" cy="100" r="' + R + '" fill="none"' +
+      ' stroke="var(--' + p.cat + ')" stroke-width="26" stroke-linecap="butt"' +
+      ' stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '"' +
+      ' stroke-dashoffset="' + (-offset).toFixed(2) + '"' +
+      ' transform="rotate(-90 100 100)"/>';
+    offset += frac * C;
+  });
+  svg += '<text x="100" y="94" text-anchor="middle" font-size="12" fill="var(--ink-3)" letter-spacing="1.5" font-weight="700">SPENT</text>';
+  svg += '<text x="100" y="118" text-anchor="middle" font-size="22" font-weight="800" fill="var(--ink)">' + fmt$(total) + '</text>';
+  svg += '</svg>';
+  return svg;
+}
+function paceSVG(s, exps, k){
+  var W = 340, H = 170, L = 40, Rp = 10, T = 12, B = 24;
+  var days = tripDays(s);
+  var n = phase(s, k) === 'before' ? 0 : dayNum(s, k);
+  var cum = [], run = 0;
+  for (var d = 1; d <= n; d++){
+    run = spentThrough(s, exps, addDays(s.tripStart, d - 1));
+    cum.push(run);
+  }
+  var maxY = Math.max(s.totalBudgetCents, run || 0) * 1.05;
+  function X(day){ return L + (W - L - Rp) * (day / days); }
+  function Y(c){ return T + (H - T - B) * (1 - c / maxY); }
+  var svg = '<svg class="pace-svg" viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; display:block; touch-action:pan-y" data-pace data-days="' + days + '">';
+  // recessive grid + y labels
+  [0, 0.5, 1].forEach(function(f){
+    var c = Math.round(s.totalBudgetCents * f);
+    svg += '<line x1="' + L + '" y1="' + Y(c) + '" x2="' + (W - Rp) + '" y2="' + Y(c) + '" stroke="var(--card-edge)" stroke-width="1"/>';
+    svg += '<text x="' + (L - 5) + '" y="' + (Y(c) + 4) + '" text-anchor="end" font-size="10" fill="var(--ink-3)">' + fmtWhole(c) + '</text>';
+  });
+  svg += '<text x="' + L + '" y="' + (H - 6) + '" font-size="10" fill="var(--ink-3)">' + fmtDay(s.tripStart).replace(/^\w+,\s*/, '') + '</text>';
+  svg += '<text x="' + (W - Rp) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" fill="var(--ink-3)">' + fmtDay(s.tripEnd).replace(/^\w+,\s*/, '') + '</text>';
+  // allowance line (muted, dashed)
+  svg += '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(days) + '" y2="' + Y(s.totalBudgetCents) + '" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="5 4"/>';
+  // actual cumulative spend line
+  if (n > 0){
+    var pts = 'M' + X(0) + ' ' + Y(0);
+    cum.forEach(function(c, i){ pts += ' L' + X(i + 1) + ' ' + Y(c); });
+    svg += '<path d="' + pts + '" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>';
+    svg += '<circle cx="' + X(n) + '" cy="' + Y(cum[n-1] || 0) + '" r="5" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>';
+  }
+  svg += '<g data-pace-cursor style="display:none"><line y1="' + T + '" y2="' + (H - B) + '" stroke="var(--ink-3)" stroke-width="1"/></g>';
+  svg += '</svg>';
+  return svg;
+}
+
+/* =========================================================
+   §F2 JUICE — synth sounds, confetti, canvas report cards
+   ========================================================= */
+var audioCtx = null;
+var SOUNDS = {
+  chaching: { wave:'triangle', gain:.18, notes:[[1318.5,0,.08],[1975.5,.08,.2]] },
+  squeak:   { wave:'sine',     gain:.15, notes:[[2300,0,.06],[2900,.05,.09]] },
+  fanfare:  { wave:'triangle', gain:.16, notes:[[523.3,0,.12],[659.3,.12,.12],[784,.24,.12],[1046.5,.36,.3]] },
+  trombone: { wave:'sawtooth', gain:.09, notes:[[233,0,.24],[220,.24,.24],[208,.48,.24],[185,.72,.55]] }
+};
+function playSound(name){
+  try {
+    if (state && state.meta && state.meta.sound === false) return;
+    var spec = SOUNDS[name];
+    if (!spec) return;
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    var t = audioCtx.currentTime;
+    spec.notes.forEach(function(n){
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = spec.wave;
+      o.frequency.setValueAtTime(n[0], t + n[1]);
+      g.gain.setValueAtTime(0.0001, t + n[1]);
+      g.gain.exponentialRampToValueAtTime(spec.gain, t + n[1] + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + n[2]);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t + n[1]); o.stop(t + n[1] + n[2] + 0.05);
+    });
+  } catch(e){}
+}
+
+function themeColor(name, fallback){
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  } catch(e){ return fallback; }
+}
+function confettiBurst(){
+  try {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var cv = document.getElementById('confetti-canvas');
+    if (!cv){
+      cv = document.createElement('canvas');
+      cv.id = 'confetti-canvas';
+      cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:95';
+      document.body.appendChild(cv);
+    }
+    cv.width = innerWidth; cv.height = innerHeight;
+    var ctx = cv.getContext('2d');
+    var colors = [themeColor('--accent','#f7c500'), themeColor('--eats','#12a355'),
+      themeColor('--fun','#e8641f'), themeColor('--stuff','#4b82e8'), '#fefefe'];
+    var parts = [];
+    for (var i = 0; i < 90; i++){
+      parts.push({ x: Math.random() * cv.width, y: -30 - Math.random() * cv.height * 0.3,
+        vx: (Math.random() - 0.5) * 2.4, vy: 2 + Math.random() * 3.5,
+        r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.25,
+        s: 7 + Math.random() * 6, c: colors[i % colors.length] });
+    }
+    var start = performance.now();
+    (function frame(now){
+      var dt = now - start;
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      if (dt > 1900) return;
+      parts.forEach(function(p){
+        p.x += p.vx; p.y += p.vy; p.vy += 0.075; p.r += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s * 0.62);
+        ctx.restore();
+      });
+      requestAnimationFrame(frame);
+    })(start);
+  } catch(e){}
+}
+
+/* ---- canvas report cards (1080x1920, sign-styled, story-sized) ---- */
+function gradeTiers(frac){
+  if (frac >= 0.1)  return { grade:'A+', quip:'Suspiciously Solvent. Did you even leave the dorm?' };
+  if (frac >= 0)    return { grade:'A',  quip:'Landed the plane. On budget. In New York. Unheard of.' };
+  if (frac >= -0.05) return { grade:'B+', quip:'Brokelyn-adjacent, but with excellent stories.' };
+  if (frac >= -0.15) return { grade:'C',  quip:'Creative Accounting. The rat respects the hustle.' };
+  return { grade:'F', quip:'Financial Performance Art. Tuition for the school of life.' };
+}
+function tripGrade(){
+  var s = state.settings, exps = state.expenses;
+  var rem = totalRemaining(s, exps);
+  var g = gradeTiers(s.totalBudgetCents > 0 ? rem / s.totalBudgetCents : 0);
+  g.rem = rem;
+  return g;
+}
+/* mid-trip grading compares to the PLAN SO FAR, not the whole budget —
+   otherwise day 3 is always an unearned A+ */
+function gradeSoFar(k){
+  var s = state.settings, exps = state.expenses;
+  var planned = cumAllow(s, dayNum(s, k));
+  var cushion = planned - spentThrough(s, exps, k);
+  var g = gradeTiers(planned > 0 ? cushion / planned : 0);
+  g.rem = cushion;
+  return g;
+}
+function drawCanvasRat(ctx, x, y, sc){
+  function E(cx, cy, rx, ry, fill){ ctx.beginPath(); ctx.ellipse(x+cx*sc, y+cy*sc, rx*sc, ry*sc, 0, 0, 6.29); ctx.fillStyle = fill; ctx.fill(); }
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x+14*sc, y+66*sc); ctx.quadraticCurveTo(x-6*sc, y+58*sc, x+6*sc, y+42*sc);
+  ctx.strokeStyle = '#e8a0a8'; ctx.lineWidth = 4*sc; ctx.stroke();
+  E(52, 60, 36, 23, '#9aa1ab');
+  E(88, 47, 17, 17, '#9aa1ab');
+  E(82, 30, 8, 8, '#9aa1ab'); E(82, 30, 4, 4, '#e8a0a8');
+  E(94, 43, 2.4, 2.4, '#0e0f11'); E(104.5, 50, 2.6, 2.6, '#e8a0a8');
+  E(38, 82, 7, 4, '#c6ccd4'); E(64, 83, 7, 4, '#c6ccd4');
+  ctx.beginPath(); ctx.moveTo(x+96*sc, y+58*sc); ctx.lineTo(x+128*sc, y+66*sc); ctx.lineTo(x+100*sc, y+80*sc);
+  ctx.closePath(); ctx.fillStyle = '#e8641f'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x+96*sc, y+58*sc); ctx.lineTo(x+128*sc, y+66*sc);
+  ctx.strokeStyle = '#f7c500'; ctx.lineWidth = 4*sc; ctx.stroke();
+  E(106, 67, 2.3, 2.3, '#ff6f61'); E(112, 71, 2.3, 2.3, '#ff6f61');
+  if (state.meta.crown){
+    ctx.beginPath();
+    ctx.moveTo(x+80*sc, y+26*sc); ctx.lineTo(x+83*sc, y+17*sc); ctx.lineTo(x+87.5*sc, y+23*sc);
+    ctx.lineTo(x+92*sc, y+14*sc); ctx.lineTo(x+96.5*sc, y+23*sc); ctx.lineTo(x+101*sc, y+17*sc); ctx.lineTo(x+104*sc, y+26*sc);
+    ctx.closePath(); ctx.fillStyle = '#f7c500'; ctx.fill();
+  }
+}
+function cardFont(px, weight){ return (weight || 800) + ' ' + px + 'px "Helvetica Neue", Helvetica, Arial, sans-serif'; }
+function makeCardCanvas(kind){
+  var W = 1080, H = 1920;
+  var c = document.createElement('canvas'); c.width = W; c.height = H;
+  var ctx = c.getContext('2d');
+  var s = state.settings, exps = state.expenses, k = nowKey();
+  var YEL = '#f7c500', INKW = '#fefefe', MUT = '#9aa1ab';
+  ctx.fillStyle = '#0b0c0e'; ctx.fillRect(0, 0, W, H);
+  // station sign header
+  ctx.fillStyle = '#000'; ctx.fillRect(70, 90, W-140, 240);
+  ctx.fillStyle = YEL; ctx.fillRect(70, 330, W-140, 14);
+  ctx.fillStyle = INKW; ctx.font = cardFont(64);
+  ctx.fillText('THE ' + (s.name || 'VIA').toUpperCase() + '-NANCIAL', 110, 195, 690);
+  ctx.fillText('DISTRICT', 110, 275, 690);
+  [['#12a355','E'],['#e8641f','F'],['#4b82e8','S']].forEach(function(b, i){
+    ctx.beginPath(); ctx.arc(830 + i*62, 250, 26, 0, 6.29); ctx.fillStyle = b[0]; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = cardFont(28); ctx.fillText(b[1], 830 + i*62 - 10, 260);
+  });
+  var MAXW = 860;
+  function label(t, y){ ctx.fillStyle = MUT; ctx.font = cardFont(34, 700); ctx.fillText(t.toUpperCase(), 110, y, MAXW); }
+  function big(t, y, color, px){ ctx.fillStyle = color || INKW; ctx.font = cardFont(px || 150); ctx.fillText(t, 110, y, MAXW); }
+  function line(t, y, color, px, weight){ ctx.fillStyle = color || INKW; ctx.font = cardFont(px || 42, weight || 700); ctx.fillText(t, 110, y, MAXW); }
+  function trunc(t, n){ t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
+  if (kind === 'day'){
+    var n = dayNum(s, k), allow = allowForDay(s, n), spent = daySpent(exps, k);
+    var under = spent <= allow;
+    label('Day ' + n + ' of ' + tripDays(s) + ' · ' + fmtDay(k), 450);
+    label('The damage', 560);
+    big(fmt$(spent), 700, under ? INKW : '#ff6f61', 170);
+    line('of a ' + fmt$(allow) + ' daily allowance', 770, MUT, 40);
+    line(under ? 'UNDER BUDGET. The rat nods slowly.' : 'OVER BUDGET. The rat is making a note.', 880, under ? '#3dbd77' : '#ff6f61', 44);
+    var todays = exps.filter(function(e){ return e.date === k && !e.diningDollars; })
+      .sort(function(a,b){ return b.amountCents - a.amountCents; });
+    if (todays[0]) line('Biggest hit: ' + trunc(todays[0].note || CATS[todays[0].category].full, 24) + ' · ' + fmt$(todays[0].amountCents), 970, INKW, 40);
+    line('Streak: ' + underStreak(s, exps, k) + ' day(s) under budget', 1050, MUT, 40);
+    line('Left overall: ' + fmt$(totalRemaining(s, exps)), 1130, INKW, 44);
+  } else {
+    var during = phase(s, k) === 'during';
+    var g = during ? gradeSoFar(k) : tripGrade();
+    var spentAll = totalSpent(exps);
+    var remAll = totalRemaining(s, exps);
+    label(during
+      ? 'Report card so far · Day ' + dayNum(s, k) + ' of ' + tripDays(s)
+      : 'Final report card · ' + fmtDay(s.tripStart) + ' – ' + fmtDay(s.tripEnd), 450);
+    ctx.save(); ctx.translate(190, 720); ctx.rotate(-0.07);
+    ctx.strokeStyle = g.rem >= 0 ? '#3dbd77' : '#ff6f61'; ctx.lineWidth = 10;
+    ctx.strokeRect(-80, -140, 340, 220);
+    ctx.fillStyle = g.rem >= 0 ? '#3dbd77' : '#ff6f61'; ctx.font = cardFont(170);
+    ctx.fillText(g.grade, -40, 40);
+    ctx.restore();
+    line(g.quip, 900, INKW, 42);
+    if (during) line((g.rem >= 0 ? 'Cushion vs the plan so far: ' : 'Behind the plan so far by: ') + fmt$(Math.abs(g.rem)), 980, MUT, 38);
+    line('Spent: ' + fmt$(spentAll) + '  ·  ' + (remAll >= 0 ? 'Left: ' : 'Over by: ') + fmt$(Math.abs(remAll)), during ? 1050 : 1000, INKW, 46);
+    CAT_ORDER.forEach(function(cat, i){
+      var y = 1100 + i * 74;
+      ctx.beginPath(); ctx.arc(135, y - 14, 22, 0, 6.29);
+      ctx.fillStyle = themeColor('--' + cat, '#888'); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = cardFont(24); ctx.fillText(CATS[cat].letter, 127, y - 5);
+      ctx.fillStyle = INKW; ctx.font = cardFont(40, 700);
+      ctx.fillText(CATS[cat].label + ' — ' + fmt$(catSpent(exps, cat)), 180, y, 790);
+    });
+  }
+  drawCanvasRat(ctx, 620, 1380, 3);
+  ctx.fillStyle = MUT; ctx.font = cardFont(30, 700);
+  ctx.setLineDash([14, 14]); ctx.strokeStyle = MUT; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(110, 1760); ctx.lineTo(W-110, 1760); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText('* thank you for spending. no refunds. — mgmt (a rat)', 110, 1830);
+  return c;
+}
+function showShareCard(kind){
+  var canvas = makeCardCanvas(kind);
+  ui.shareCanvas = canvas;
+  var url = canvas.toDataURL('image/png');
+  var canDl = !!(window.claude && window.claude.downloads && window.claude.downloads.save);
+  document.getElementById('share-zone').innerHTML =
+    '<div class="share-back" role="dialog" aria-modal="true" aria-label="Report card" data-testid="share-overlay">' +
+    '<img class="share-img" data-testid="share-img" alt="Report card" src="' + url + '">' +
+    '<div class="share-hint">Long-press the card → “Add to Photos” to save it</div>' +
+    (canDl ? '<button class="btn primary" data-action="share-download" data-testid="share-download">Download PNG</button>' : '') +
+    '<button class="btn" data-action="share-close" data-testid="share-close">Done</button></div>';
+  var done = document.querySelector('[data-testid=share-close]');
+  if (done) done.focus();
+}
+
+/* =========================================================
+   §G VIEWS — template functions; math lives in §D, not here
+   ========================================================= */
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function catDot(cat, sm){
+  return '<span class="cat-dot d-' + cat + (sm ? ' sm' : '') + '" aria-hidden="true">' + CATS[cat].letter + '</span>';
+}
+
+function viewSign(){
+  var s = state.settings, k = nowKey(), ph = phase(s, k);
+  var strip = ph === 'during'
+    ? 'Day ' + dayNum(s, k) + ' of ' + tripDays(s)
+    : (ph === 'before' ? 'Doors opening' : 'End of the line');
+  return '<h1>The ' + esc(s.name) + '-nancial District</h1>' +
+    '<div class="sub"><span class="bullets">' +
+      '<span class="bullet sm b-eats">E</span><span class="bullet sm b-fun">F</span><span class="bullet sm b-stuff">S</span>' +
+    '</span><span>' + strip + ' · NYC</span></div>';
+}
+
+function viewBanners(){
+  var html = '';
+  if (ui.readOnly){
+    html += '<div class="banner" data-testid="readonly-banner">This page is older than your data (someone updated the app elsewhere). Read-only to keep your stuff safe — export a backup below.</div>';
+  }
+  if (ui.memoryMode && !ui.bannerDismissed.mem){
+    var atHome = /\bgithub\.io$/.test(location.hostname);
+    html += atHome
+      ? '<div class="banner" data-testid="storage-banner">Storage is busted like a weekend L train. Your data only lives in this tab right now — go to Settings and export a backup ASAP.' +
+        '<button class="bx" data-action="dismiss-banner" data-b="mem" aria-label="Dismiss">✕</button></div>'
+      : '<div class="banner" data-testid="storage-banner"><span><b>This preview can’t save anything</b> — it runs in a sandbox that blocks storage. ' +
+        'Via’s real app lives at <a href="' + HOME_URL + '" style="color:inherit; font-weight:800">' + HOME_URL.replace('https://','') + '</a> — ' +
+        'open that link and add THAT one to your home screen.</span>' +
+        '<button class="bx" data-action="dismiss-banner" data-b="mem" aria-label="Dismiss">✕</button></div>';
+  }
+  if (ui.corruptRaw && !ui.bannerDismissed.corrupt){
+    html += '<div class="banner" data-testid="corrupt-banner">Found your old data in a weird state (very Port Authority of it). It’s stashed raw — copy it before it’s lost.' +
+      '<button class="small btn" style="width:auto;margin:0 0 0 8px" data-action="copy-corrupt">Copy</button>' +
+      '<button class="bx" data-action="dismiss-banner" data-b="corrupt" aria-label="Dismiss">✕</button></div>';
+  }
+  return html;
+}
+
+function advisoryHTML(){
+  var s = state.settings, k = nowKey();
+  if (phase(s, k) !== 'during' || state.meta.lastAlertDay === k) return '';
+  var y = addDays(k, -1);
+  var goodDay = y < s.tripStart || daySpent(state.expenses, y) <= allowForDay(s, dayNum(s, y));
+  var lines = goodDay ? LINES.alertGood : LINES.alertBad;
+  return '<div class="advisory" data-testid="advisory"><span class="ah">Service advisory · MTA*' +
+    '<button data-action="dismiss-advisory" data-testid="dismiss-advisory" aria-label="Dismiss advisory">✕</button></span>' +
+    seededPick(lines, 'alert') +
+    '<span style="display:block; font-size:10px; color:rgba(254,254,254,.5); margin-top:4px">*Money Tracking Authority. Not affiliated with trains.</span></div>';
+}
+
+function expRow(e, s){
+  var offRange = e.date < s.tripStart || e.date > s.tripEnd;
+  var badge = e.diningDollars ? '<span class="badge">🎓 dining $</span>' : '';
+  if (offRange) badge += '<span class="badge">' + (e.date < s.tripStart ? 'pre-game' : 'encore') + '</span>';
+  return '<button class="exp" data-action="edit-expense" data-id="' + esc(e.id) + '" data-testid="expense-row">' +
+    catDot(e.category) +
+    '<span class="what"><span class="n">' + esc(e.note || CATS[e.category].full) + badge + '</span>' +
+    '<span class="s">' + fmtDay(e.date) + '</span></span>' +
+    '<span class="amt num' + (e.diningDollars ? ' dd' : '') + '">' + fmt$(e.amountCents) + '</span>' +
+  '</button>';
+}
+
+function viewToday(){
+  var s = state.settings, exps = state.expenses, k = nowKey();
+  var ph = phase(s, k);
+  if (ph === 'before') return viewCountdown();
+  if (ph === 'after') return viewWrapup();
+
+  var avail = availableToday(s, exps, k);
+  var allow = allowForDay(s, dayNum(s, k));
+  var spent = daySpent(exps, k);
+  var rem = totalRemaining(s, exps);
+  var dleft = daysRemaining(s, k);
+  var pc = pace(s, exps, k);
+  var tier = healthTier(s, exps, k);
+  var todays = exps.filter(function(e){ return e.date === k; })
+    .sort(function(a,b){ return b.createdAt - a.createdAt; });
+  var pctOfToday = allow > 0 ? Math.min(spent / allow, 1) : 1;
+
+  var html = advisoryHTML();
+  html += ratRow({ tier: tier, streak: underStreak(s, exps, k) }, currentQuip() || ratLine(tier));
+
+  html += '<section class="card">' +
+    '<div class="label">You can spend today</div>' +
+    '<div class="headline num' + (avail < 0 ? ' over' : '') + '" data-testid="headline-amount">' + fmt$(avail) + '</div>' +
+    '<div class="faint" style="font-size:13px">rollover included · base ' + fmt$(allow) + '/day</div>' +
+    '<div class="daybar" aria-hidden="true"><i class="' + (spent > allow ? 'over' : '') + '" style="width:' + Math.round(pctOfToday*100) + '%"></i></div>' +
+    '<div class="stat-row">' +
+      '<div class="stat"><div class="label">Left overall</div><div class="v num' + (rem < 0 ? ' over' : '') + '" data-testid="total-remaining">' + fmt$(rem) + '</div></div>' +
+      '<div class="stat"><div class="label">Days left</div><div class="v num" data-testid="days-left">' + dleft + '</div></div>' +
+      '<div class="stat"><div class="label">Pace</div><div class="v num" data-testid="pace">' + fmt$(pc) + '/d</div></div>' +
+    '</div>' +
+    '<div class="chip-row"><span class="chip" data-testid="dd-chip">🎓 Dining dollars (week ' + (weekIndex(s, k) + 1) + '): <b class="num">' + fmt$(ddRemainingForWeek(s, exps, weekIndex(s, k))) + '</b></span></div>' +
+  '</section>';
+
+  html += '<section class="card"><h2 class="sec">Today’s damage <span class="faint num" style="font-weight:600">' + fmt$(spent) + '</span></h2>';
+  if (todays.length === 0){
+    html += '<div class="center-empty">' + seededPick(LINES.emptyToday, 'et') + '</div>';
+  } else {
+    html += '<div class="exp-list">' + todays.map(function(e){ return expRow(e, s); }).join('') + '</div>';
+  }
+  html += '</section>';
+
+  html += '<section class="card"><h2 class="sec">Can I afford it?</h2>' +
+    '<div class="afford-row">' +
+      '<input type="text" inputmode="decimal" id="afford-amt" data-testid="afford-input" value="' + esc(ui.affordRaw || '') + '" placeholder="e.g. 89 for that Broadway seat" aria-label="Price to check">' +
+      '<button class="btn" data-action="afford" data-testid="afford-btn">Ask the rat</button>' +
+    '</div>' +
+    '<div class="preview-line" id="afford-out" data-testid="afford-out">' + (ui.affordOut || '') + '</div>' +
+  '</section>';
+  return html;
+}
+
+function viewCountdown(){
+  var s = state.settings, k = nowKey();
+  var d = diffDays(k, s.tripStart);
+  return ratRow({ tier: 'pretrip' }, currentQuip() || ratLine('pretrip')) +
+  '<section class="card" style="text-align:center" data-testid="countdown">' +
+    '<div class="label">Trip starts in</div>' +
+    '<div class="hero-days num">' + d + '</div>' +
+    '<div class="muted" style="font-weight:600">day' + (d === 1 ? '' : 's') + ' · ' + fmtDay(s.tripStart) + ' → ' + fmtDay(s.tripEnd) + '</div>' +
+    '<div class="preview-line num">' + fmt$(s.totalBudgetCents) + ' over ' + tripDays(s) + ' days ≈ <b>' + fmt$(Math.round(s.totalBudgetCents / tripDays(s))) + '/day</b> + 🎓 ' + fmt$(s.ddPerWeekCents) + '/week dining dollars</div>' +
+  '</section>' +
+  '<section class="card"><h2 class="sec">Pre-flight checklist</h2>' +
+    '<div class="funstat"><span class="k">Customize quick-add buttons</span><span class="v">in Settings</span></div>' +
+    '<div class="funstat"><span class="k">Add this page to your home screen</span><span class="v">Share → Add</span></div>' +
+    '<div class="funstat"><span class="k">Practice saying “I’m walking here”</span><span class="v">ongoing</span></div>' +
+    '<div class="center-empty">Any spending you log before ' + fmtDay(s.tripStart) + ' counts toward Day 1. The rat allows pre-gaming.</div>' +
+  '</section>';
+}
+
+function viewWrapup(){
+  var s = state.settings, exps = state.expenses;
+  var spent = totalSpent(exps);
+  var g = tripGrade(), rem = g.rem;
+  var biggestDay = null, biggestAmt = -1;
+  for (var d = s.tripStart; d <= s.tripEnd; d = addDays(d, 1)){
+    var ds = daySpent(exps, d);
+    if (ds > biggestAmt){ biggestAmt = ds; biggestDay = d; }
+  }
+  return ratRow({ tier: rem >= 0 ? 'flush' : 'busted' },
+    currentQuip() || ('That’s a wrap on the ' + esc(s.name) + '-nancial District. I laughed, I cried, I ate the evidence.')) +
+  '<section class="card" style="text-align:center" data-testid="wrapup">' +
+    '<div class="label">Final report card</div>' +
+    '<div class="grade ' + (rem >= 0 ? 'good-ink' : 'danger-ink') + '">' + g.grade + '</div>' +
+    '<div class="muted" style="font-weight:600">' + g.quip + '</div>' +
+    '<div class="stat-row" style="text-align:left">' +
+      '<div class="stat"><div class="label">Spent</div><div class="v num">' + fmt$(spent) + '</div></div>' +
+      '<div class="stat"><div class="label">' + (rem >= 0 ? 'Left over' : 'Over by') + '</div><div class="v num' + (rem < 0 ? ' over' : '') + '">' + fmt$(Math.abs(rem)) + '</div></div>' +
+      '<div class="stat"><div class="label">Biggest day</div><div class="v num">' + (biggestDay ? fmt$(biggestAmt) : '—') + '</div></div>' +
+    '</div>' +
+    '<button class="btn primary" data-action="share-trip" data-testid="share-trip">Make the shareable report card</button>' +
+    '<button class="btn" data-action="export-json" data-testid="export-json">Save the evidence (backup)</button>' +
+  '</section>' +
+  '<section class="card">' + viewStatsInner() + '</section>';
+}
+
+function viewHistory(){
+  var s = state.settings, exps = state.expenses.slice()
+    .sort(function(a,b){ return a.date === b.date ? b.createdAt - a.createdAt : (a.date < b.date ? 1 : -1); });
+  var html = '<section class="card receipt"><h2 class="sec" style="font-family:inherit">THE RECEIPT *</h2>';
+  if (exps.length === 0){
+    html += '<div class="center-empty">' + seededPick(LINES.emptyHistory, 'eh') + '</div></section>';
+    return html;
+  }
+  var byDay = {};
+  exps.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
+  var days = Object.keys(byDay).sort().reverse();
+  days.forEach(function(d){
+    var rows = byDay[d];
+    var spent = sumCents(rows.filter(function(e){ return !e.diningDollars; }));
+    var inTrip = d >= s.tripStart && d <= s.tripEnd;
+    var head, sub = '';
+    if (inTrip){
+      var n = dayNum(s, d), allow = allowForDay(s, n);
+      var over = spent > allow;
+      head = '<div class="day-h" data-testid="day-header"><span>' + fmtDay(d).toUpperCase() + ' · DAY ' + n + '</span>' +
+        '<span class="tot num ' + (over ? 'over' : 'under') + '">' + fmt$(spent) + ' / ' + fmt$(allow) + '</span></div>';
+      sub = '<div class="day-sub">' + (over ? 'over. the rat is making a note.' : 'under budget. the rat nods slowly.') + '</div>';
+    } else {
+      head = '<div class="day-h" data-testid="day-header"><span>' + fmtDay(d).toUpperCase() + ' · ' + (d < s.tripStart ? 'PRE-GAME' : 'ENCORE') + '</span>' +
+        '<span class="tot num">' + fmt$(spent) + '</span></div>';
+    }
+    html += head + sub + '<div class="exp-list">' + rows.map(function(e){ return expRow(e, s); }).join('') + '</div>';
+  });
+  html += '<div class="tear">✂ - - - - - - - - - - - - - - ✂</div>' +
+    '<div class="day-sub" style="text-align:center">* thank you for spending. no refunds. — mgmt (a rat)</div></section>';
+  return html;
+}
+
+function viewStatsInner(){
+  var s = state.settings, exps = state.expenses;
+  var parts = CAT_ORDER.map(function(c){ return { cat: c, cents: catSpent(exps, c) }; });
+  var html = '<h2 class="sec">Where it went</h2>' + donutSVG(parts) +
+    '<div class="legend">' + parts.map(function(p){
+      return '<div class="lrow">' + catDot(p.cat) + '<span>' + CATS[p.cat].label +
+        ' <span class="faint">· ' + CATS[p.cat].full + '</span></span>' +
+        '<span class="grow"></span><span class="amt num">' + fmt$(p.cents) + '</span></div>';
+    }).join('') + '</div>';
+  var dd = ddSpent(exps);
+  if (dd > 0) html += '<div class="chart-note">+ ' + fmt$(dd) + ' of dining dollars (tracked separately, off the books, very mob of you)</div>';
+  return html;
+}
+function viewStats(){
+  var s = state.settings, exps = state.expenses, k = nowKey();
+  var html = '<section class="card">' + viewStatsInner() + '</section>';
+  html += '<section class="card"><h2 class="sec">The pace race</h2>' + paceSVG(s, exps, k) +
+    '<div class="pace-tip" data-testid="pace-tip">Touch the chart to snoop on any day.</div>' +
+    '<div class="legend" style="margin-top:8px">' +
+      '<div class="lrow"><span style="width:18px; border-top:3px solid var(--accent); border-radius:2px"></span><span>What you’ve spent</span></div>' +
+      '<div class="lrow"><span style="width:18px; border-top:2px dashed var(--ink-3)"></span><span>The plan (' + fmt$(Math.round(s.totalBudgetCents / tripDays(s))) + '/day)</span></div>' +
+    '</div>' +
+    '<div class="chart-note">Stay under the dashed line and the rat stays happy. The gap between the lines is your rollover cushion.</div></section>';
+
+  var biggest = null;
+  realSpend(exps).forEach(function(e){ if (!biggest || e.amountCents > biggest.amountCents) biggest = e; });
+  var counts = {};
+  exps.forEach(function(e){ if (e.note) counts[e.note] = (counts[e.note] || 0) + 1; });
+  var topNote = Object.keys(counts).sort(function(a,b){ return counts[b] - counts[a]; })[0];
+  var pizza = exps.filter(function(e){ return /pizza|slice|🍕/i.test(e.note || ''); }).length;
+  var streak = underStreak(s, exps, k);
+  html += '<section class="card"><h2 class="sec">Extremely important metrics</h2>' +
+    '<div class="funstat"><span class="k">Biggest splurge</span><span class="v num">' + (biggest ? esc(biggest.note || CATS[biggest.category].full) + ' · ' + fmt$(biggest.amountCents) : '—') + '</span></div>' +
+    '<div class="funstat"><span class="k">Most-logged thing</span><span class="v">' + (topNote ? esc(topNote) + ' ×' + counts[topNote] : '—') + '</span></div>' +
+    '<div class="funstat"><span class="k">🍕 Pizza index</span><span class="v num">' + pizza + '</span></div>' +
+    '<div class="funstat"><span class="k">Days under budget streak</span><span class="v num">' + streak + '</span></div>' +
+  '</section>';
+
+  var gotIds = unlockedBadges().map(function(a){ return a.id; });
+  html += '<section class="card"><h2 class="sec">Badge wall <span class="faint" style="font-weight:600">' + gotIds.length + '/' + ACHIEVEMENTS.length + '</span></h2>' +
+    '<div class="badges">' + ACHIEVEMENTS.map(function(a){
+      var got = gotIds.indexOf(a.id) >= 0;
+      return '<div class="badge-card' + (got ? '' : ' locked') + '" data-testid="badge-' + a.id + '" data-got="' + got + '">' +
+        '<span class="be">' + a.emoji + '</span><span><span class="bn">' + esc(a.name) + '</span>' +
+        '<span class="bd">' + esc(a.desc) + '</span></span></div>';
+    }).join('') + '</div></section>';
+
+  var ph = phase(s, k);
+  html += '<section class="card"><h2 class="sec">Report cards</h2>' +
+    '<div class="chart-note" style="margin-top:0">A save-able card for the group chat. The rat poses.</div>' +
+    (ph === 'during' ? '<button class="btn" data-action="share-day" data-testid="share-day">Today’s report card</button>' : '') +
+    (ph !== 'before'
+      ? '<button class="btn" data-action="share-trip" data-testid="share-trip">' + (ph === 'after' ? 'Final trip report card' : 'Trip report card (so far)') + '</button>'
+      : '<div class="center-empty">Cards unlock when the trip starts. The rat is warming up his pose.</div>') +
+  '</section>';
+  return html;
+}
+
+function viewSettings(){
+  var s = state.settings;
+  var perDay = Math.round(s.totalBudgetCents / tripDays(s));
+  var html = '<section class="card"><h2 class="sec">The deal</h2>' +
+    '<div class="funstat"><span class="k">The trip</span><span class="v">' + fmtDay(s.tripStart) + ' → ' + fmtDay(s.tripEnd) + '</span></div>' +
+    '<div class="funstat"><span class="k">The budget</span><span class="v num">' + fmt$(s.totalBudgetCents) + '</span></div>' +
+    '<div class="funstat"><span class="k">Works out to</span><span class="v num">' + fmt$(perDay) + '/day × ' + tripDays(s) + ' days</span></div>' +
+    '<div class="funstat"><span class="k">Dining dollars</span><span class="v num">' + fmt$(s.ddPerWeekCents) + ' / week</span></div>' +
+    '<div class="chart-note">Carved into bedrock schist. Via said hardcode it, so it’s hardcoded.</div>' +
+  '</section>';
+
+  html += '<section class="card"><h2 class="sec">Quick-add buttons</h2>' +
+    state.quickAdds.map(function(q){
+      return '<button class="qa-row" data-action="qa-edit" data-id="' + esc(q.id) + '">' +
+        '<span class="e">' + esc(q.emoji) + '</span><span class="l">' + esc(q.label) +
+        ' <span class="faint" style="font-weight:400">· ' + CATS[q.category].label + '</span></span>' +
+        '<span class="p num">' + fmt$(q.amountCents) + '</span></button>';
+    }).join('') +
+    '<button class="btn" data-action="qa-add" data-testid="qa-add">Add a button</button>' +
+  '</section>';
+
+  html += '<section class="card"><h2 class="sec">Backups (your money’s fire escape)</h2>' +
+    '<button class="btn" data-action="export-json" data-testid="export-json">Export backup (JSON)</button>' +
+    '<button class="btn" data-action="export-csv" data-testid="export-csv">Export spreadsheet (CSV)</button>' +
+    '<div class="field wide" style="margin-top:14px"><span class="label">Restore: paste a backup here</span>' +
+      '<textarea id="import-text" data-testid="import-text" placeholder=\'{"schemaVersion":1,...}\'></textarea></div>' +
+    '<button class="btn" data-action="import-check" data-testid="import-check">Check it</button>' +
+    '<button class="btn" data-action="restore-bak" data-testid="restore-bak">Restore last automatic backup</button>' +
+    '<div id="import-zone">' + (ui.importPreview ? importPreviewHTML() : '') + '</div>' +
+  '</section>';
+
+  html += '<section class="card"><h2 class="sec">Noise</h2>' +
+    '<button class="dd-toggle" data-action="toggle-sound" data-testid="sound-toggle" aria-pressed="' + (state.meta.sound !== false) + '" style="margin-bottom:0">' +
+    'Cash-register sounds &amp; rat squeaks<span class="knob"></span></button>' +
+  '</section>';
+
+  html += '<section class="card"><h2 class="sec">The board of directors</h2>' +
+    '<div class="muted" style="font-size:14px">The ' + esc(s.name) + '-nancial District v1. Built for ' + esc(s.name) + ', one (1) legendary New-Yorker-in-training — she runs this town now.<br><br>' +
+    'CFO: Carlo “Slice” Ratigan (Chief Fiscal Rodent). Salary: one (1) slice, non-negotiable. No pigeons were consulted.</div>' +
+    '<button class="btn destructive" data-action="reset-all" data-testid="reset-all">' + (ui.confirmReset ? 'Tap again to REALLY burn it all down' : 'Burn it all down (reset)') + '</button>' +
+  '</section>';
+  return html;
+}
+function importPreviewHTML(){
+  var p = ui.importPreview;
+  if (p.error) return '<div class="err" data-testid="import-error">' + esc(p.error) + '</div>';
+  return '<div class="import-preview" data-testid="import-preview">' +
+    '<b>This backup:</b> ' + p.days + '-day trip · ' + p.count + ' expense' + (p.count === 1 ? '' : 's') +
+    ' · ' + fmt$(p.spent) + ' spent<br>' +
+    '<span class="muted">It will REPLACE your current ' + state.expenses.length + ' expense' + (state.expenses.length === 1 ? '' : 's') + '. No takebacks (well, one automatic .bak).</span>' +
+    '<button class="btn destructive" data-action="import-confirm" data-testid="import-confirm">Yes, replace everything</button>' +
+  '</div>';
+}
+
+/* ---- add / edit sheet ---- */
+function viewSheet(){
+  var sh = ui.sheet;
+  if (!sh) return '';
+  var isQA = sh.mode === 'qa-edit' || sh.mode === 'qa-add';
+  var title = sh.mode === 'add' ? 'What’d you buy?' :
+              sh.mode === 'edit' ? 'Fix the record' :
+              sh.mode === 'qa-add' ? 'New quick button' : 'Edit quick button';
+  var html = '<div class="backdrop" data-action="sheet-cancel"></div>' +
+    '<div class="panel" role="dialog" aria-modal="true" tabindex="-1" aria-label="' + title + '" data-testid="sheet">' +
+    '<div class="grab"></div>' +
+    '<div class="sheet-h"><h2>' + title + '</h2><button class="x" data-action="sheet-cancel">Nevermind</button></div>';
+
+  if (sh.mode === 'add'){
+    html += '<div class="qa-grid">' + state.quickAdds.map(function(q){
+      return '<button class="qa-tile" data-action="qa-tap" data-id="' + esc(q.id) + '" data-testid="qa-tile">' +
+        '<span class="e">' + esc(q.emoji) + '</span><span class="l">' + esc(q.label) + '</span>' +
+        '<span class="p num">' + fmt$(q.amountCents) + '</span></button>';
+    }).join('') + '</div>';
+  }
+  if (isQA){
+    html += '<div class="sheet-row">' +
+      '<div class="field" style="flex:0 0 76px"><span class="label">Emoji</span><input type="text" id="f-emoji" maxlength="4" value="' + esc(sh.emoji || '✨') + '"></div>' +
+      '<div class="field"><span class="label">Label</span><input type="text" id="f-label" maxlength="24" value="' + esc(sh.label || '') + '" placeholder="Halal cart"></div>' +
+    '</div>';
+  }
+  var amtVal = sh.amountRaw ? sh.amountRaw : (sh.amountCents != null ? String(sh.amountCents/100) : '');
+  html += '<div class="amount-wrap"><span class="cur">$</span>' +
+    '<input type="text" inputmode="decimal" id="f-amount" data-testid="amount-input" placeholder="0.00" value="' + esc(amtVal) + '" aria-label="Amount in dollars"></div>';
+  if (!isQA){
+    html += '<div class="split-row" role="group" aria-label="Split the bill">' +
+      [2, 3, 4].map(function(n){
+        return '<button data-action="split" data-n="' + n + '" data-testid="split-' + n + '">÷' + n + '</button>';
+      }).join('') +
+      '<span class="faint" style="font-size:12px">splitting the bill? tap one</span></div>';
+  }
+  html += '<div class="seg" role="group" aria-label="Category">' + CAT_ORDER.map(function(c){
+    return '<button data-action="pick-cat" data-cat="' + c + '" data-testid="category-' + c + '" aria-pressed="' + (sh.category === c) + '">' +
+      catDot(c, true) + CATS[c].label + '</button>';
+  }).join('') + '</div>';
+
+  if (!isQA){
+    html += '<div class="sheet-row">' +
+      '<div class="field"><span class="label">What was it</span><input type="text" id="f-note" data-testid="note-input" maxlength="80" value="' + esc(sh.note || '') + '" placeholder="dumplings, obviously"></div>' +
+      '<div class="field" style="flex:0 0 152px"><span class="label">When</span><input type="date" id="f-date" data-testid="date-input" value="' + esc(sh.date) + '" min="' + addDays(state.settings.tripStart, -7) + '" max="' + (nowKey() > state.settings.tripEnd ? nowKey() : state.settings.tripEnd) + '"></div>' +
+    '</div>';
+    var shWeek = weekIndex(state.settings, sh.date);
+    var ddLeft = ddRemainingForWeek(state.settings, state.expenses, shWeek, sh.mode === 'edit' ? sh.id : null);
+    html += '<button class="dd-toggle" data-action="toggle-dd" data-testid="dd-toggle" aria-pressed="' + !!sh.diningDollars + '">' +
+      '🎓 Paid with dining dollars <span class="faint num">(' + fmt$(ddLeft) + ' left wk ' + (shWeek + 1) + ')</span><span class="knob"></span></button>';
+  } else {
+    html += '<div class="field" style="margin-bottom:12px"><span class="label">Note it logs as</span><input type="text" id="f-note" maxlength="80" value="' + esc(sh.note || '') + '"></div>';
+  }
+
+  html += '<div class="err" id="sheet-err" data-testid="sheet-err">' + esc(sh.err || '') + '</div>';
+  if (sh.errSwitch){
+    html += '<button class="btn" data-action="dd-switch" data-testid="dd-switch">Charge the real budget instead</button>';
+  }
+  html += '<div class="sheet-actions">';
+  if (sh.mode === 'edit') html += '<button class="btn destructive" data-action="sheet-delete" data-testid="delete-expense" style="flex:0 0 34%">Yeet it</button>';
+  if (sh.mode === 'qa-edit') html += '<button class="btn destructive" data-action="qa-delete" style="flex:0 0 34%">Remove</button>';
+  html += '<button class="btn primary" data-action="sheet-save" data-testid="save-expense"' + (ui.readOnly ? ' disabled' : '') + '>' +
+    (isQA ? 'Save button' : esc(seededPick(LINES.saveBtn, 'btn'))) + '</button></div></div>';
+  return html;
+}
+
+/* ---- tab bar ---- */
+var ICONS = {
+  today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21z"/><path d="M9 8h6M9 12h6"/></svg>',
+  stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>'
+};
+function viewTabbar(){
+  function tab(id, label){
+    return '<button class="tab" data-action="tab" data-tab="' + id + '" data-testid="tab-' + id + '" aria-current="' + (ui.tab === id) + '">' + ICONS[id] + label + '</button>';
+  }
+  return tab('today','Today') + tab('history','Receipt') +
+    '<button class="fab" data-action="open-add" data-testid="fab" aria-label="Add expense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></button>' +
+    tab('stats','Stats') + tab('settings','Settings');
+}
+
+/* ---- top-level render ---- */
+function render(){
+  ui.lastRenderedDay = realTodayKey();
+  document.getElementById('sign').innerHTML = viewSign();
+  document.getElementById('banner-zone').innerHTML = viewBanners();
+  var screen = document.getElementById('screen');
+  screen.innerHTML =
+    ui.tab === 'today' ? viewToday() :
+    ui.tab === 'history' ? viewHistory() :
+    ui.tab === 'stats' ? viewStats() : viewSettings();
+  document.getElementById('tabbar').innerHTML = viewTabbar();
+  // the sheet intentionally does NOT re-render here (keyboard focus safety)
+}
+function renderSheet(){
+  var zone = document.getElementById('sheet-zone');
+  var firstOpen = !zone.querySelector('.panel');
+  if (firstOpen) ui.returnFocus = document.activeElement;
+  zone.innerHTML = viewSheet();
+  document.body.style.overflow = 'hidden';
+  if (firstOpen){
+    // focus the dialog itself, NOT an input: auto-popping the keyboard is
+    // what made iOS zoom-jump on every sheet open
+    var panel = zone.querySelector('.panel');
+    if (panel) panel.focus();
+  } else {
+    // validation-error re-render: the user was mid-typing — keep them in the
+    // field instead of dropping their keyboard
+    var amt = document.getElementById('f-amount');
+    if (amt){ amt.focus(); amt.setSelectionRange(amt.value.length, amt.value.length); }
+  }
+}
+
+/* ---- toast ---- */
+function toast(msg, actionLabel, actionFn){
+  var zone = document.getElementById('toast-zone');
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = '<span>' + msg + '</span>' + (actionLabel ? '<button data-toast-action>' + esc(actionLabel) + '</button>' : '');
+  zone.appendChild(el);
+  if (actionLabel){
+    el.querySelector('[data-toast-action]').addEventListener('click', function(){
+      el.remove(); actionFn();
+    });
+  }
+  setTimeout(function(){ el.remove(); }, 6000);
+}
+
+/* =========================================================
+   §H ACTIONS — one delegated listener, data-action routing
+   ========================================================= */
+function readSheetForm(){
+  var sh = ui.sheet;
+  var amtEl = document.getElementById('f-amount');
+  var noteEl = document.getElementById('f-note');
+  var dateEl = document.getElementById('f-date');
+  var emojiEl = document.getElementById('f-emoji');
+  var labelEl = document.getElementById('f-label');
+  if (amtEl) sh.amountRaw = amtEl.value;
+  if (noteEl) sh.note = noteEl.value;
+  if (dateEl && dateEl.value) sh.date = dateEl.value;
+  if (emojiEl) sh.emoji = emojiEl.value;
+  if (labelEl) sh.label = labelEl.value;
+}
+function openAddSheet(prefill){
+  ui.sheet = Object.assign({
+    mode: 'add', amountCents: null, amountRaw: '', category: 'eats',
+    note: '', date: nowKey(), diningDollars: false, err: '', errSwitch: false
+  }, prefill || {});
+  renderSheet();
+}
+function closeSheet(){
+  ui.sheet = null;
+  document.getElementById('sheet-zone').innerHTML = '';
+  document.body.style.overflow = '';
+  if (ui.returnFocus && ui.returnFocus.isConnected) ui.returnFocus.focus();
+  ui.returnFocus = null;
+}
+
+function saveExpenseFromSheet(){
+  if (ui.readOnly){ closeSheet(); toast('Read-only mode — nothing changed.'); return; }
+  var sh = ui.sheet;
+  readSheetForm();
+  var cents = sh.amountCents;
+  if (sh.amountRaw !== '') cents = parseCents(sh.amountRaw);
+  sh.err = ''; sh.errSwitch = false;
+  if (cents == null || cents <= 0){
+    sh.err = 'That amount is not money. Even in Times Square.'; renderSheet(); return;
+  }
+  if (!isKey(sh.date)){ sh.err = 'That date is not a date.'; renderSheet(); return; }
+  if (sh.diningDollars){
+    var w = weekIndex(state.settings, sh.date);
+    var left = ddRemainingForWeek(state.settings, state.expenses, w, sh.mode === 'edit' ? sh.id : null);
+    if (cents > left){
+      sh.err = LINES.ddBlocked + ' (' + fmt$(left) + ' left in week ' + (w + 1) + '.)';
+      sh.errSwitch = true; renderSheet(); return;
+    }
+  }
+  if (sh.mode === 'edit'){
+    commit(function(st){
+      var e = st.expenses.find(function(x){ return x.id === sh.id; });
+      if (e){ e.amountCents = cents; e.category = sh.category; e.note = (sh.note || '').trim(); e.date = sh.date; e.diningDollars = !!sh.diningDollars; }
+    });
+  } else {
+    commit(function(st){
+      st.expenses.push({ id: uid(), amountCents: cents, category: sh.category,
+        note: (sh.note || '').trim(), date: sh.date, diningDollars: !!sh.diningDollars, createdAt: Date.now() });
+    });
+  }
+  closeSheet();
+  toast(seededPick(LINES.saved, 'sv' + state.expenses.length));
+  playSound(!sh.diningDollars && availableToday(state.settings, state.expenses, nowKey()) < 0 ? 'trombone' : 'chaching');
+  checkBadges();
+}
+
+var actions = {
+  'tab': function(el){
+    ui.tab = el.dataset.tab; ui.ratQuip = null;
+    render(); window.scrollTo(0,0);
+    maybeCelebrateWrapup();
+  },
+  'rat-tap': function(){
+    var quips = LINES.wisdom;
+    ui.ratQuip = quips[Math.floor(Math.random() * quips.length)];
+    ui.ratQuipDay = nowKey();
+    if (!ui.readOnly){
+      state.meta.ratTaps = (state.meta.ratTaps || 0) + 1;
+      if (state.meta.ratTaps >= 10 && !state.meta.crown){
+        state.meta.crown = true;
+        ui.ratQuip = 'A crown?! For ME? …I mean. Yes. Obviously. Bow.';
+        playSound('fanfare');
+        confettiBurst();
+      }
+      save();
+    }
+    playSound('squeak');
+    render();
+    var btn = document.querySelector('.rat-btn');
+    if (btn) btn.classList.add('bounce');
+  },
+  'afford': function(){
+    var el = document.getElementById('afford-amt');
+    var out = document.getElementById('afford-out');
+    if (!el || !out) return;
+    ui.affordRaw = el.value;
+    var cents = parseCents(el.value);
+    if (cents == null || cents <= 0){
+      ui.affordOut = 'The rat needs a number. Dreams are not a number.';
+      out.innerHTML = ui.affordOut;
+      return;
+    }
+    var s = state.settings, exps = state.expenses, k = nowKey();
+    var after = availableToday(s, exps, k) - cents;
+    var d = daysRemaining(s, k);
+    var newPace = d > 0 ? Math.floor((totalRemaining(s, exps) - cents) / d) : 0;
+    var slices = Math.max(1, Math.round(cents / 400));
+    var verdict;
+    if (after >= 0) verdict = 'Buy it. You’re fine. Annoyingly fine.';
+    else if (newPace >= 6000) verdict = 'Doable — but that’s tomorrow’s brunch you’re eating.';
+    else if (newPace >= 0) verdict = 'Ehh. The rat is squinting at you.';
+    else verdict = 'Only if it comes with housing included.';
+    ui.affordOut = 'That’s ≈ <b>' + slices + ' dollar-ish slice' + (slices === 1 ? '' : 's') + '</b>. ' +
+      'Today after buying: <b class="num">' + fmt$(after) + '</b> · new pace <b class="num">' + fmt$(newPace) + '/d</b>.<br>' +
+      '<b>' + verdict + '</b>';
+    out.innerHTML = ui.affordOut;
+  },
+  'split': function(el){
+    var amtEl = document.getElementById('f-amount');
+    var sh = ui.sheet;
+    if (!amtEl || !sh) return;
+    // divide the ORIGINAL typed amount, not the last result — repeated taps
+    // and divisor corrections must not compound (÷2 then ÷3 means ÷3, not ÷6)
+    if (sh.splitBase == null || amtEl.value !== sh.splitWritten){
+      var base = parseCents(amtEl.value);
+      if (base == null || base <= 0) return;
+      sh.splitBase = base;
+    }
+    amtEl.value = String(Math.round(sh.splitBase / +el.dataset.n) / 100);
+    sh.splitWritten = amtEl.value;
+    readSheetForm();
+  },
+  'share-day': function(){ showShareCard('day'); },
+  'share-trip': function(){ showShareCard('trip'); },
+  'share-download': function(){
+    var canvas = ui.shareCanvas;
+    if (!canvas || !(window.claude && window.claude.downloads)) return;
+    canvas.toBlob(function(blob){
+      if (!blob) return;
+      window.claude.downloads.save({ filename: 'vianancial-card-' + nowKey() + '.png', data: blob })
+        .then(function(){ toast('Saved. Post it. Tag the rat.'); })
+        .catch(function(err){
+          if (err && err.code === 'declined') return;
+          toast('Download didn’t go through — long-press the image instead.');
+        });
+    }, 'image/png');
+  },
+  'share-close': function(){
+    ui.shareCanvas = null;
+    document.getElementById('share-zone').innerHTML = '';
+  },
+  'toggle-sound': function(el){
+    if (ui.readOnly) return;
+    state.meta.sound = state.meta.sound === false;
+    save();
+    el.setAttribute('aria-pressed', String(state.meta.sound !== false));
+    if (state.meta.sound !== false) playSound('chaching');
+  },
+  'dismiss-advisory': function(){
+    if (ui.readOnly){ state.meta.lastAlertDay = nowKey(); render(); return; }
+    commit(function(st){ st.meta.lastAlertDay = nowKey(); });
+  },
+  'open-add': function(){ openAddSheet(); },
+  'qa-tap': function(el){
+    var q = state.quickAdds.find(function(x){ return x.id === el.dataset.id; });
+    if (!q) return;
+    var sh = ui.sheet;
+    sh.amountCents = q.amountCents; sh.amountRaw = '';
+    sh.category = q.category; sh.note = q.note || q.label;
+    // surgical DOM update; the sheet never re-renders while open unless erroring
+    document.getElementById('f-amount').value = q.amountCents / 100;
+    document.getElementById('f-note').value = sh.note;
+    document.querySelectorAll('[data-action="pick-cat"]').forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.cat === q.category));
+    });
+  },
+  'pick-cat': function(el){
+    readSheetForm();
+    ui.sheet.category = el.dataset.cat;
+    document.querySelectorAll('[data-action="pick-cat"]').forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.cat === el.dataset.cat));
+    });
+  },
+  'toggle-dd': function(el){
+    readSheetForm();
+    ui.sheet.diningDollars = !ui.sheet.diningDollars;
+    el.setAttribute('aria-pressed', String(ui.sheet.diningDollars));
+  },
+  'dd-switch': function(){
+    readSheetForm();
+    ui.sheet.diningDollars = false; ui.sheet.err = ''; ui.sheet.errSwitch = false;
+    saveExpenseFromSheet();
+  },
+  'sheet-save': function(){
+    if (ui.sheet.mode === 'qa-add' || ui.sheet.mode === 'qa-edit') saveQuickAddFromSheet();
+    else saveExpenseFromSheet();
+  },
+  'sheet-cancel': function(){ closeSheet(); },
+  'sheet-delete': function(){
+    var id = ui.sheet.id;
+    var e = state.expenses.find(function(x){ return x.id === id; });
+    closeSheet();
+    if (!e) return;
+    if (ui.readOnly){ toast('Read-only mode — deleting is off. Export a backup, then reload.'); return; }
+    commit(function(st){ st.expenses = st.expenses.filter(function(x){ return x.id !== id; }); });
+    // each toast captures ITS deleted expense — stacked deletes each undo correctly
+    toast(LINES.deleted, 'Undo', function(){
+      if (state.expenses.some(function(x){ return x.id === e.id; })) return;
+      commit(function(st){ st.expenses.push(e); });
+      toast(LINES.restored);
+    });
+  },
+  'edit-expense': function(el){
+    var e = state.expenses.find(function(x){ return x.id === el.dataset.id; });
+    if (!e) return;
+    ui.sheet = { mode:'edit', id: e.id, amountCents: e.amountCents, amountRaw: '',
+      category: e.category, note: e.note, date: e.date, diningDollars: e.diningDollars,
+      err:'', errSwitch:false };
+    renderSheet();
+  },
+  'qa-add': function(){
+    ui.sheet = { mode:'qa-add', emoji:'✨', label:'', note:'', amountCents:null, amountRaw:'', category:'eats', err:'' };
+    renderSheet();
+  },
+  'qa-edit': function(el){
+    var q = state.quickAdds.find(function(x){ return x.id === el.dataset.id; });
+    if (!q) return;
+    ui.sheet = { mode:'qa-edit', id:q.id, emoji:q.emoji, label:q.label, note:q.note,
+      amountCents:q.amountCents, amountRaw:'', category:q.category, err:'' };
+    renderSheet();
+  },
+  'qa-delete': function(){
+    var id = ui.sheet.id;
+    closeSheet();
+    if (ui.readOnly){ toast('Read-only mode — nothing changed.'); return; }
+    commit(function(st){ st.quickAdds = st.quickAdds.filter(function(x){ return x.id !== id; }); });
+    toast('Button removed. It served honorably.');
+  },
+  'dismiss-banner': function(el){ ui.bannerDismissed[el.dataset.b] = true; render(); },
+  'copy-corrupt': function(){ copyText(ui.corruptRaw || ''); toast('Old data copied. Paranoia rewarded.'); },
+  'export-json': function(){ exportJSON(); },
+  'export-csv': function(){ exportCSV(); },
+  'import-check': function(){ checkImport(); },
+  'import-confirm': function(){ confirmImport(); },
+  'restore-bak': function(){
+    var raw = storageGet(KEY + '.bak');
+    if (!raw){ toast('No automatic backup exists yet. Nothing risky has happened. Boring, honestly.'); return; }
+    var res = validateImport(raw);
+    if (res.error){
+      ui.importPreview = { error: 'The automatic backup is unreadable: ' + res.error };
+    } else {
+      var c = res.clean;
+      ui.importPreview = {
+        clean: c,
+        days: diffDays(c.settings.tripStart, c.settings.tripEnd) + 1,
+        count: c.expenses.length,
+        spent: sumCents(c.expenses.filter(function(e){ return !e.diningDollars; }))
+      };
+    }
+    render();
+  },
+  'reset-all': function(){
+    if (ui.readOnly){ toast('Read-only mode — the reset button is decorative today.'); return; }
+    if (!ui.confirmReset){
+      ui.confirmReset = true; render();
+      setTimeout(function(){ ui.confirmReset = false; try{ render(); }catch(e){} }, 4000);
+      return;
+    }
+    ui.confirmReset = false;
+    storageSet(KEY + '.bak', JSON.stringify(state));
+    state = seedState();
+    save(); render();
+    toast('Fresh start. The .bak file knows what you did.');
+  }
+};
+
+function saveQuickAddFromSheet(){
+  if (ui.readOnly){ closeSheet(); toast('Read-only mode — nothing changed.'); return; }
+  var sh = ui.sheet;
+  readSheetForm();
+  var cents = sh.amountCents;
+  if (sh.amountRaw !== '') cents = parseCents(sh.amountRaw);
+  if (cents == null || cents <= 0){ sh.err = 'Needs a real price. This is New York.'; renderSheet(); return; }
+  if (!(sh.label || '').trim()){ sh.err = 'Give it a name. Every legend has one.'; renderSheet(); return; }
+  var payload = { emoji: (sh.emoji || '✨').trim().slice(0,4) || '✨', label: sh.label.trim(),
+    amountCents: cents, category: sh.category, note: (sh.note || sh.label).trim() };
+  if (sh.mode === 'qa-edit'){
+    commit(function(st){
+      var q = st.quickAdds.find(function(x){ return x.id === sh.id; });
+      if (q) Object.assign(q, payload);
+    });
+  } else {
+    commit(function(st){ st.quickAdds.push(Object.assign({ id: uid() }, payload)); });
+  }
+  closeSheet();
+  toast('Quick button ready. Tap responsibly.');
+}
+
+document.addEventListener('click', function(ev){
+  var el = ev.target.closest('[data-action]');
+  if (!el) return;
+  var fn = actions[el.dataset.action];
+  if (fn) fn(el);
+});
+function maybeCelebrateWrapup(){
+  if (ui.tab === 'today' && phase(state.settings, nowKey()) === 'after' && !ui.wrapConfettied){
+    ui.wrapConfettied = true;
+    confettiBurst();
+  }
+}
+/* sheet keyboard support: Escape closes, Tab stays inside the dialog */
+document.addEventListener('keydown', function(ev){
+  if (ev.key === 'Enter' && ev.target && ev.target.id === 'afford-amt'){
+    ev.preventDefault();
+    actions['afford']();
+    return;
+  }
+  if (ev.key === 'Escape' && document.querySelector('#share-zone .share-back')){
+    ev.preventDefault();
+    actions['share-close']();
+    return;
+  }
+  if (!ui.sheet) return;
+  if (ev.key === 'Escape'){ ev.preventDefault(); closeSheet(); return; }
+  if (ev.key !== 'Tab') return;
+  var panel = document.querySelector('#sheet-zone .panel');
+  if (!panel) return;
+  var f = panel.querySelectorAll('button, input, textarea, select');
+  if (!f.length) return;
+  var first = f[0], last = f[f.length - 1];
+  if (document.activeElement === panel){ ev.preventDefault(); (ev.shiftKey ? last : first).focus(); }
+  else if (!panel.contains(document.activeElement)){ ev.preventDefault(); first.focus(); }
+  else if (ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); }
+  else if (!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); }
+});
+/* keep the afford input's value across full re-renders (rat taps, dismissals) */
+document.addEventListener('input', function(ev){
+  if (ev.target && ev.target.id === 'afford-amt') ui.affordRaw = ev.target.value;
+});
+/* keep "today" honest: re-render when the NY day flips or the tab wakes up */
+function dayTick(){
+  if (ui.sheet || ui.debugNow) return;
+  if (realTodayKey() !== ui.lastRenderedDay) render();
+}
+setInterval(dayTick, 60000);
+document.addEventListener('visibilitychange', function(){ if (!document.hidden) dayTick(); });
+/* another tab saved: adopt its state so tabs converge instead of clobbering */
+window.addEventListener('storage', function(ev){
+  if (ev.key !== KEY || !ev.newValue || ui.readOnly) return;
+  try {
+    var p = JSON.parse(ev.newValue);
+    if (p && p.settings && Array.isArray(p.expenses) &&
+        typeof p.schemaVersion === 'number' && p.schemaVersion <= SCHEMA){
+      p.meta = metaDefaults(p.meta);
+      state = p;
+      if (!ui.sheet) render();
+    }
+  } catch(e){ /* ignore malformed cross-tab writes */ }
+});
+/* pace chart touch/pointer inspection */
+document.addEventListener('pointermove', paceInspect);
+document.addEventListener('pointerdown', paceInspect);
+function paceInspect(ev){
+  var svg = ev.target.closest('[data-pace]');
+  var tip = document.querySelector('[data-testid="pace-tip"]');
+  if (!svg || !tip) return;
+  var rect = svg.getBoundingClientRect();
+  var s = state.settings;
+  var days = tripDays(s);
+  var L = 40 / 340 * rect.width, Rp = 10 / 340 * rect.width;
+  var frac = (ev.clientX - rect.left - L) / (rect.width - L - Rp);
+  var day = Math.max(1, Math.min(days, Math.round(frac * days)));
+  var dKey = addDays(s.tripStart, day - 1);
+  var spent = spentThrough(s, state.expenses, dKey);
+  var allow = cumAllow(s, day);
+  tip.textContent = 'Day ' + day + ' (' + fmtDay(dKey) + '): spent ' + fmt$(spent) + ' · plan ' + fmt$(allow) +
+    ' · ' + (spent <= allow ? fmt$(allow - spent) + ' cushion 😌' : fmt$(spent - allow) + ' over 😬');
+}
+
+/* =========================================================
+   §I EXPORT / IMPORT
+   ========================================================= */
+function copyText(text){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text).catch(function(){ legacyCopy(text); });
+  }
+  legacyCopy(text);
+  return Promise.resolve();
+}
+function legacyCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  ta.remove();
+}
+function exportPayload(){
+  return JSON.stringify(Object.assign({}, state, { exportedAt: new Date().toISOString() }), null, 2);
+}
+function exportJSON(){
+  var data = exportPayload();
+  var name = 'vianancial-backup-' + nowKey() + '.json';
+  if (window.claude && window.claude.downloads && window.claude.downloads.save){
+    window.claude.downloads.save({ filename: name, data: data })
+      .then(function(){ toast(LINES.exported); })
+      .catch(function(){ copyText(data).then(function(){ toast(LINES.copied); }); });
+  } else {
+    copyText(data).then(function(){ toast(LINES.copied); });
+  }
+}
+function exportCSV(){
+  var rows = [['date','amount','category','note','dining_dollars']];
+  state.expenses.slice().sort(function(a,b){ return a.date < b.date ? -1 : 1; }).forEach(function(e){
+    rows.push([e.date, (e.amountCents/100).toFixed(2), e.category,
+      '"' + String(e.note || '').replace(/"/g,'""') + '"', e.diningDollars ? 'yes' : 'no']);
+  });
+  var csv = rows.map(function(r){ return r.join(','); }).join('\n');
+  var name = 'vianancial-expenses-' + nowKey() + '.csv';
+  if (window.claude && window.claude.downloads && window.claude.downloads.save){
+    window.claude.downloads.save({ filename: name, data: csv })
+      .then(function(){ toast(LINES.exported); })
+      .catch(function(){ copyText(csv).then(function(){ toast(LINES.copied); }); });
+  } else {
+    copyText(csv).then(function(){ toast(LINES.copied); });
+  }
+}
+function validateImport(raw){
+  var v;
+  try { v = JSON.parse(raw); }
+  catch(e){ return { error: 'That’s not JSON. That’s barely text. Try pasting the whole backup.' }; }
+  if (!v || typeof v !== 'object') return { error: 'Not a backup. The rat sniffed it. Nothing.' };
+  if (typeof v.schemaVersion !== 'number' || v.schemaVersion > SCHEMA)
+    return { error: 'This backup is from a newer version of the app than this page. Update the page first.' };
+  var s = v.settings;
+  var ddField = v.schemaVersion >= 2 ? s && s.ddPerWeekCents : s && s.diningDollarsStartCents;
+  if (!s || !isKey(s.tripStart) || !isKey(s.tripEnd) || s.tripEnd < s.tripStart ||
+      !Number.isInteger(s.totalBudgetCents) || s.totalBudgetCents <= 0 ||
+      !Number.isInteger(ddField) || ddField < 0)
+    return { error: 'The settings in this backup are scrambled like a deli egg.' };
+  if (!Array.isArray(v.expenses)) return { error: 'No expense list in there. Suspiciously clean books.' };
+  for (var i = 0; i < v.expenses.length; i++){
+    var e = v.expenses[i];
+    if (!e || !Number.isInteger(e.amountCents) || e.amountCents < 0 || e.amountCents > 100000000 ||
+        !CATS[e.category] || !isKey(e.date))
+      return { error: 'Expense #' + (i+1) + ' is broken. The whole backup is off the menu.' };
+  }
+  var clean = {
+    schemaVersion: SCHEMA,
+    settings: {
+      tripStart: s.tripStart, tripEnd: s.tripEnd,
+      totalBudgetCents: s.totalBudgetCents,
+      // a v1 backup's one-pot dining dollars becomes the weekly allotment
+      ddPerWeekCents: v.schemaVersion >= 2 ? s.ddPerWeekCents : 3000,
+      name: typeof s.name === 'string' && s.name.trim() ? s.name.trim().slice(0,20) : 'Via'
+    },
+    expenses: (function(){
+      var seen = {};
+      return v.expenses.map(function(e){
+        var id = (typeof e.id === 'string' && e.id && e.id.length <= 64 && !seen[e.id]) ? e.id : uid();
+        seen[id] = true;
+        return { id: id, amountCents: e.amountCents,
+          category: e.category, note: String(e.note || '').slice(0,200), date: e.date,
+          diningDollars: !!e.diningDollars,
+          createdAt: Number.isFinite(e.createdAt) ? e.createdAt : Date.now() };
+      });
+    })(),
+    quickAdds: Array.isArray(v.quickAdds) ? v.quickAdds.filter(function(q){
+      return q && Number.isInteger(q.amountCents) && q.amountCents > 0 && CATS[q.category] &&
+        typeof q.label === 'string' && q.label.trim();
+    }).map(function(q){
+      return { id: typeof q.id === 'string' ? q.id : uid(), emoji: String(q.emoji || '✨').slice(0,4),
+        label: q.label.trim().slice(0,24), amountCents: q.amountCents, category: q.category,
+        note: String(q.note || q.label).slice(0,80) };
+    }) : defaultQuickAdds(),
+    meta: metaDefaults(v.meta)
+  };
+  return { clean: clean };
+}
+function checkImport(){
+  var raw = document.getElementById('import-text').value.trim();
+  if (!raw){ ui.importPreview = { error: 'Paste something first. The box is not decorative.' }; }
+  else {
+    var res = validateImport(raw);
+    if (res.error) ui.importPreview = { error: res.error };
+    else {
+      var c = res.clean;
+      ui.importPreview = {
+        clean: c,
+        days: diffDays(c.settings.tripStart, c.settings.tripEnd) + 1,
+        count: c.expenses.length,
+        spent: sumCents(c.expenses.filter(function(e){ return !e.diningDollars; }))
+      };
+    }
+  }
+  document.getElementById('import-zone').innerHTML = importPreviewHTML();
+}
+function confirmImport(){
+  var p = ui.importPreview;
+  if (!p || !p.clean) return;
+  storageSet(KEY + '.bak', JSON.stringify(state));
+  state = p.clean;
+  ui.importPreview = null;
+  ui.readOnly = false;
+  save(); render();
+  toast(LINES.imported);
+}
+
+/* =========================================================
+   §J BOOT
+   ========================================================= */
+/* make sure a HEAD-level viewport exists. maximum-scale=1 is added on iOS
+   ONLY: there it suppresses the input-focus auto-zoom while Safari (10+)
+   still allows user pinch; on Android it would genuinely block pinch-zoom */
+try {
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var vpContent = 'width=device-width, initial-scale=1, viewport-fit=cover' +
+    (isIOS ? ', maximum-scale=1' : '');
+  var vp = document.head && document.head.querySelector('meta[name="viewport"]');
+  if (vp) vp.setAttribute('content', vpContent);
+  else if (document.head){
+    vp = document.createElement('meta');
+    vp.name = 'viewport'; vp.content = vpContent;
+    document.head.appendChild(vp);
+  }
+} catch(e){}
+
+load();
+render();
+maybeCelebrateWrapup();
+
+/* on a real origin (GitHub Pages): ask the browser to protect our storage
+   from eviction, and install the offline shell */
+try {
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){});
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !ui.memoryMode){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+} catch(e){}
+
+window.__test = {
+  setNow: function(k){ ui.debugNow = k; render(); },
+  getState: function(){ return state; },
+  getUI: function(){ return ui; },
+  logic: logic,
+  fmt$: fmt$,
+  render: render
+};
+})();
+</script>
