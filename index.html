@@ -1,5 +1,12 @@
 <title>The Via-nancial District</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0f11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Via-nancial">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 
 <style>
 /* ============================================================
@@ -519,6 +526,7 @@ function fmtWhole(cents){
    ========================================================= */
 var KEY = 'vianancial.v1';
 var SCHEMA = 2;
+var HOME_URL = 'https://viaate.github.io/olivify/';
 var MIGRATIONS = [
   // v1 → v2: dining dollars became a weekly use-it-or-lose-it allotment
   function(st){
@@ -1248,8 +1256,14 @@ function viewBanners(){
     html += '<div class="banner" data-testid="readonly-banner">This page is older than your data (someone updated the app elsewhere). Read-only to keep your stuff safe — export a backup below.</div>';
   }
   if (ui.memoryMode && !ui.bannerDismissed.mem){
-    html += '<div class="banner" data-testid="storage-banner">Storage is busted like a weekend L train. Your data only lives in this tab right now — go to Settings and export a backup ASAP.' +
-      '<button class="bx" data-action="dismiss-banner" data-b="mem" aria-label="Dismiss">✕</button></div>';
+    var atHome = /\bgithub\.io$/.test(location.hostname);
+    html += atHome
+      ? '<div class="banner" data-testid="storage-banner">Storage is busted like a weekend L train. Your data only lives in this tab right now — go to Settings and export a backup ASAP.' +
+        '<button class="bx" data-action="dismiss-banner" data-b="mem" aria-label="Dismiss">✕</button></div>'
+      : '<div class="banner" data-testid="storage-banner"><span><b>This preview can’t save anything</b> — it runs in a sandbox that blocks storage. ' +
+        'Via’s real app lives at <a href="' + HOME_URL + '" style="color:inherit; font-weight:800">' + HOME_URL.replace('https://','') + '</a> — ' +
+        'open that link and add THAT one to your home screen.</span>' +
+        '<button class="bx" data-action="dismiss-banner" data-b="mem" aria-label="Dismiss">✕</button></div>';
   }
   if (ui.corruptRaw && !ui.bannerDismissed.corrupt){
     html += '<div class="banner" data-testid="corrupt-banner">Found your old data in a weird state (very Port Authority of it). It’s stashed raw — copy it before it’s lost.' +
@@ -2183,6 +2197,15 @@ try {
 load();
 render();
 maybeCelebrateWrapup();
+
+/* on a real origin (GitHub Pages): ask the browser to protect our storage
+   from eviction, and install the offline shell */
+try {
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){});
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !ui.memoryMode){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+} catch(e){}
 
 window.__test = {
   setNow: function(k){ ui.debugNow = k; render(); },

@@ -1,0 +1,14 @@
+{
+  "name": "The Via-nancial District",
+  "short_name": "Via-nancial",
+  "description": "Via's NYC trip budget: $1,800, 14 days, one judgmental pizza rat.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#101214",
+  "theme_color": "#0e0f11",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

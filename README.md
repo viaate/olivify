@@ -74,10 +74,18 @@ newer-schema guards, phase transitions, and both color themes.
 `tests/seed.js` re-implements the money math independently so tests never
 trust the app's own logic.
 
-## Publishing
+## Hosting
 
-Publish `index.html` as a claude.ai Artifact with
-`capabilities: {downloads: true}`. The file intentionally has no
-`<!doctype>/<html>/<head>/<body>` wrapper (the Artifact publisher adds one);
-browsers hoist its leading `<title>/<meta>/<style>` correctly when opened
-directly, so the same file also works from `file://` or any static server.
+**The real app lives on GitHub Pages: https://viaate.github.io/olivify/** —
+auto-deployed by `.github/workflows/pages.yml` on every push to the default
+branch (the workflow self-enables Pages via `actions/configure-pages`). Pages
+is the canonical home because the claude.ai Artifact preview runs in a
+sandboxed frame that **blocks all persistent storage** — the app detects that
+and shows a banner pointing here instead. On Pages the app is a proper PWA:
+`manifest.webmanifest` + Carlo icons (regenerate with
+`node tests/make-icons.cjs`) + `sw.js` (network-first offline shell), and it
+requests `navigator.storage.persist()` to guard against eviction.
+
+The same `index.html` still publishes as a claude.ai Artifact (it has no
+`<!doctype>/<html>/<head>/<body>` wrapper; the publisher adds one) — useful
+as a preview, not as the daily app.
