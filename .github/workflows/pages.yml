@@ -1,14 +1,16 @@
 name: Deploy app to GitHub Pages
 
+# Publishes the app to the gh-pages branch (GitHub Pages serves that branch).
+# Branch-based publishing needs only contents:write — the Actions-native
+# deploy-pages flow requires site-admin rights the workflow token never has.
+
 on:
   push:
     branches: [claude/nyu-trip-budget-app-3az709]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -17,20 +19,19 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - name: Stage site
+      - name: Stage and push site to gh-pages
         run: |
           mkdir _site
           cp index.html manifest.webmanifest sw.js icon-192.png icon-512.png _site/
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          touch _site/.nojekyll
+          cd _site
+          git init -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy ${GITHUB_SHA}"
+          git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
